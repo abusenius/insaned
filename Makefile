@@ -1,12 +1,12 @@
 
 PROJECT := insaned
 
-CFLAGS := -Wall -Wextra -pedantic -pipe -O2 -std=c99
+CFLAGS := -Wall -Wextra -pedantic -pipe -O2 -std=c99 -Isrc
 
 
 all : $(PROJECT)
 
-$(PROJECT) : scanimage.o
+$(PROJECT) : src/insaned.o
 	gcc $(CFLAGS) $^ -o $@ -lsane
 
 %.o : %.c %.h
@@ -16,5 +16,5 @@ $(PROJECT) : scanimage.o
 .PHONY : clean
 
 clean :
-	rm -rf scanimage.o $(PROJECT)
+	rm -rf src/insaned.o $(PROJECT)
 

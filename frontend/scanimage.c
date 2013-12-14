@@ -22,42 +22,24 @@
    along with this program; if not, write to the Free Software
    Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.  */
 
-#ifdef _AIX
-# include "../include/lalloca.h"                /* MUST come first for AIX! */
-#endif
-
-#include "../include/sane/config.h"
-#include "../include/lalloca.h"
+#include "config.h"
+#include <alloca.h>
 
 #include <assert.h>
-#include "lgetopt.h"
 #include <signal.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <strings.h>
 #include <unistd.h>
 #include <stdarg.h>
 
 #include <sys/types.h>
 #include <sys/stat.h>
+#include <stdint.h>
+#include <getopt.h>
 
-#include "../include/_stdint.h"
-
-#include "../include/sane/sane.h"
-#include "../include/sane/sanei.h"
-#include "../include/sane/saneopts.h"
-
-#include "stiff.h"
-
-#include "../include/md5.h"
-
-#ifndef PATH_MAX
-#define PATH_MAX 1024
-#endif
-
-#ifndef HAVE_ATEXIT
-# define atexit(func)	on_exit(func, 0)	/* works for SunOS, at least */
-#endif
+#include <sane/sane.h>
 
 typedef struct
 {
@@ -70,7 +52,6 @@ typedef struct
 Image;
 
 #define OPTION_FORMAT   1001
-#define OPTION_MD5	1002
 #define OPTION_BATCH_COUNT	1003
 #define OPTION_BATCH_START_AT	1004
 #define OPTION_BATCH_DOUBLE	1005
@@ -97,14 +78,12 @@ static struct option basic_options[] = {
   {"batch-increment", required_argument, NULL, OPTION_BATCH_INCREMENT},
   {"batch-prompt", no_argument, NULL, OPTION_BATCH_PROMPT},
   {"format", required_argument, NULL, OPTION_FORMAT},
-  {"accept-md5-only", no_argument, NULL, OPTION_MD5},
   {"icc-profile", required_argument, NULL, 'i'},
   {"dont-scan", no_argument, NULL, 'n'},
   {0, 0, NULL, 0}
 };
 
 #define OUTPUT_PNM      0
-#define OUTPUT_TIFF     1
 
 #define BASE_OPTSTRING	"d:hi:Lf:B::nvVTAbp"
 #define STRIP_HEIGHT	256	/* # lines we increment image height */
@@ -129,7 +108,6 @@ static int window[4]; /*index into backend options for x,y,l,t*/
 static SANE_Word window_val[2]; /*the value for x,y options*/
 static int window_val_user[2];	/* is x,y user-specified? */
 
-static int accept_only_md5_auth = 0;
 static const char *icc_profile = NULL;
 
 static void fetch_options (SANE_Device * device);
@@ -148,8 +126,7 @@ auth_callback (SANE_String_Const resource,
 	       SANE_Char * username, SANE_Char * password)
 {
   char tmp[3 + 128 + SANE_MAX_USERNAME_LEN + SANE_MAX_PASSWORD_LEN], *wipe;
-  unsigned char md5digest[16];
-  int md5mode = 0, len, query_user = 1;
+  int len, query_user = 1;
   FILE *pass_file;
   struct stat stat_buf;
 
@@ -245,23 +222,8 @@ auth_callback (SANE_String_Const resource,
 	}
     }
 
-  if (strstr (resource, "$MD5$") != NULL)
-    {
-      md5mode = 1;
-      len = (strstr (resource, "$MD5$") - resource);
-      if (query_user == 1)
-	fprintf (stderr, "Authentification required for resource %*.*s. "
-		 "Enter username: ", len, len, resource);
-    }
-  else
     {
 
-      if (accept_only_md5_auth != 0)
-	{
-	  fprintf (stderr, "ERROR: backend requested plain-text password\n");
-	  return;
-	}
-      else
 	{
 	  fprintf (stderr,
 		   "WARNING: backend requested plain-text password\n");
@@ -282,37 +244,12 @@ auth_callback (SANE_String_Const resource,
 
   if (query_user == 1)
     {
-#ifdef HAVE_GETPASS
       strcpy (password, (wipe = getpass ("Enter password: ")));
       memset (wipe, 0, strlen (password));
-#else
-      printf("OS has no getpass().  User Queries will not work\n");
-#endif
-    }
-
-  if (md5mode)
-    {
-
-      sprintf (tmp, "%.128s%.*s", (strstr (resource, "$MD5$")) + 5,
-	       SANE_MAX_PASSWORD_LEN - 1, password);
-
-      md5_buffer (tmp, strlen (tmp), md5digest);
-
-      memset (password, 0, SANE_MAX_PASSWORD_LEN);
-
-      sprintf (password, "$MD5$%02x%02x%02x%02x%02x%02x%02x%02x"
-	       "%02x%02x%02x%02x%02x%02x%02x%02x",
-	       md5digest[0], md5digest[1],
-	       md5digest[2], md5digest[3],
-	       md5digest[4], md5digest[5],
-	       md5digest[6], md5digest[7],
-	       md5digest[8], md5digest[9],
-	       md5digest[10], md5digest[11],
-	       md5digest[12], md5digest[13], md5digest[14], md5digest[15]);
     }
 }
 
-static RETSIGTYPE
+static void
 sighandler (int signum)
 {
   static SANE_Bool first_time = SANE_TRUE;
@@ -1270,12 +1207,6 @@ scan_it (void)
 		}
 	      else
 		{
-		  if (output_format == OUTPUT_TIFF)
-		    sanei_write_tiff_header (parm.format,
-					     parm.pixels_per_line, parm.lines,
-					     parm.depth, resolution_value,
-					     icc_profile);
-		  else
 		    write_pnm_header (parm.format, parm.pixels_per_line,
 				      parm.lines, parm.depth);
 		}
@@ -1397,7 +1328,7 @@ scan_it (void)
 	    }
 	  else			/* ! must_buffer */
 	    {
-	      if ((output_format == OUTPUT_TIFF) || (parm.depth != 16))
+	      if ((parm.depth != 16))
 		fwrite (buffer, 1, len, stdout);
 	      else
 		{
@@ -1451,18 +1382,13 @@ scan_it (void)
     {
       image.height = image.y;
 
-      if (output_format == OUTPUT_TIFF)
-	sanei_write_tiff_header (parm.format, parm.pixels_per_line,
-				 image.height, parm.depth, resolution_value,
-				 icc_profile);
-      else
 	write_pnm_header (parm.format, parm.pixels_per_line,
                           image.height, parm.depth);
 
 #if !defined(WORDS_BIGENDIAN)
       /* multibyte pnm file may need byte swap to LE */
       /* FIXME: other bit depths? */
-      if (output_format != OUTPUT_TIFF && parm.depth == 16)
+      if (parm.depth == 16)
 	{
 	  int i;
 	  for (i = 0; i < image.height * image.width; i += 2)
@@ -1793,13 +1719,7 @@ main (int argc, char **argv)
 	  batch = 1;
 	  break;
 	case OPTION_FORMAT:
-	  if (strcmp (optarg, "tiff") == 0)
-	    output_format = OUTPUT_TIFF;
-	  else
-	    output_format = OUTPUT_PNM;
-	  break;
-	case OPTION_MD5:
-	  accept_only_md5_auth = 1;
+	  output_format = OUTPUT_PNM;
 	  break;
 	case 'L':
 	case 'f':
@@ -1945,7 +1865,7 @@ standard output.\n\
 Parameters are separated by a blank from single-character options (e.g.\n\
 -d epson) and by a \"=\" from multi-character options (e.g. --device-name=epson).\n\
 -d, --device-name=DEVICE   use a given scanner device (e.g. hp:/dev/scanner)\n\
-    --format=pnm|tiff      file format of output file\n\
+    --format=pnm           file format of output file\n\
 -i, --icc-profile=PROFILE  include this ICC profile into TIFF file\n", prog_name);
       printf ("\
 -L, --list-devices         show available scanner devices\n\
@@ -1961,8 +1881,7 @@ Parameters are separated by a blank from single-character options (e.g.\n\
     --batch-increment=#    increase page number in filename by #\n\
     --batch-double         increment page number by two, same as\n\
                            --batch-increment=2\n\
-    --batch-prompt         ask for pressing a key before scanning a page\n\
-    --accept-md5-only      only accept authorization requests using md5\n");
+    --batch-prompt         ask for pressing a key before scanning a page\n");
       printf ("\
 -p, --progress             print progress messages\n\
 -n, --dont-scan            only set options, don't actually scan\n\
@@ -2231,10 +2150,7 @@ List of available devices:", prog_name);
 
       if (batch && NULL == format)
 	{
-	  if (output_format == OUTPUT_TIFF)
-	    format = "out%d.tif";
-	  else
-	    format = "out%d.pnm";
+	  format = "out%d.pnm";
 	}
 
       if (batch)

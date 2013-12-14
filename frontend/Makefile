@@ -1,13 +1,13 @@
 
 PROJECT := insaned
 
-CFLAGS := -Wall -Wextra -pedantic -pipe -O2
+CFLAGS := -Wall -Wextra -pedantic -pipe -O2 -std=c99
 
 
 all : $(PROJECT)
 
 $(PROJECT) : scanimage.o
-	gcc $(CFLAGS) $^ -o $@
+	gcc $(CFLAGS) $^ -o $@ -lsane
 
 %.o : %.c %.h
 	gcc $(CFLAGS) -c $< -o $@

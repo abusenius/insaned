@@ -1,6 +1,6 @@
 
 /* Define to the name of the distribution. */
-#define PACKAGE "sane-backends"
+#define PACKAGE "insaned"
 
 /* Enable GNU extensions on systems that have them.  */
 #ifndef _GNU_SOURCE
@@ -8,7 +8,7 @@
 #endif
 
 /* Define to the version of the distribution. */
-#define VERSION "1.0.24"
+#define VERSION "0.0.1"
 
 #define SANE_NAME_SCAN_TL_X		"tl-x"
 #define SANE_NAME_SCAN_TL_Y		"tl-y"

@@ -1,12 +1,12 @@
-/* scanimage -- command line scanning utility
+/* insaned -- simple daemon polling button presses using the SANE library
+   Heavily based on scanimage utility from SANE distribution
+   Copyright (C) 2013 - 2014 Alex Busenius
+
+   scanimage -- command line scanning utility
    Uses the SANE library.
    Copyright (C) 1996, 1997, 1998 Andreas Beck and David Mosberger
    
-   Copyright (C) 1999 - 2009 by the SANE Project -- See AUTHORS and ChangeLog
-   for details.
-
-   For questions and comments contact the sane-devel mailinglist (see
-   http://www.sane-project.org/mailing-lists.html).
+   Copyright (C) 1999 - 2009 by the SANE Project
 
    This program is free software; you can redistribute it and/or
    modify it under the terms of the GNU General Public License as
@@ -23,8 +23,8 @@
    Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.  */
 
 #include "config.h"
-#include <alloca.h>
 
+#include <alloca.h>
 #include <assert.h>
 #include <signal.h>
 #include <stdio.h>
@@ -33,7 +33,6 @@
 #include <strings.h>
 #include <unistd.h>
 #include <stdarg.h>
-
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <stdint.h>

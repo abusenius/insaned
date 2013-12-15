@@ -16,7 +16,7 @@ start() {
 		--pidfile "${INSANED_PIDFILE}" \
 		--user ${INSANED_USER} --group ${INSANED_GROUP} \
 		--nicelevel ${INSANED_NICELEVEL:-0} \
-		--exec /usr/bin/insaned -p ${INSANED_PIDFILE} ${INSANED_EXTRAOPTS}
+		--exec /usr/bin/insaned -- -p ${INSANED_PIDFILE} ${INSANED_EXTRAOPTS}
 	eend $?
 }
 

@@ -17,6 +17,8 @@ fi
 ln -s . $TMPLINK
 
 make clean
+rm tags
+
 tar cjvf backup/${TMPLINK}.tar.bz2 $TMPLINK/* --exclude=$TMPLINK/$TMPLINK --exclude=$TMPLINK/backup
 
 rm -vf $TMPLINK

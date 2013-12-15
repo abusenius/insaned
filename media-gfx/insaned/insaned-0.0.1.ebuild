@@ -24,15 +24,15 @@ RDEPEND=">=media-gfx/sane-backends-1.0.23"
 DEPEND="${RDEPEND}"
 
 src_install() {
-	dobin insaned
+	dobin insaned || die "install failed"
 
-	exeinto /etc/init.d | die "install failed"
-	doexe init.d/insaned
+	exeinto /etc/init.d || die "install failed"
+	doexe init.d/insaned || die "install failed"
 
-	insinto /etc/conf.d
-	doins conf.d/insaned | die "install failed"
+	insinto /etc/conf.d || die "install failed"
+	doins conf.d/insaned || die "install failed"
 
-	exeinto /etc/insaned/events
-	doexe events/example
+	exeinto /etc/insaned/events || die "install failed"
+	doexe events/example || die "install failed"
 }
 

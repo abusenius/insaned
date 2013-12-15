@@ -1,0 +1,53 @@
+#!/bin/sh
+
+# This is an example event handler script
+#
+# Event handlers have to have the same name as the sensor they are handling
+# you can list the sensor names (and read their current value) of the default
+# SANE device using the -L flag, example:
+#
+# % ./insaned -L
+# List of sensors for device 'genesys:libusb:001:003':
+#     copy        [no]
+#     email       [no]
+#     extra       [no]
+#     file        [no]
+#     scan        [no]
+#
+# If you want to use another device, you can specify the device name using the
+# -d flag. You can list the available devices using insaned -h or scanimage -L
+# Currently, no authorization is supported.
+#
+# Event handlers have to be executable. The daemon will log warnings if you press
+# a button for which it cannot find a corresponding event handler.
+# If you want to suppress these warnings, create an empty executable handler script.
+# E.g. like this:
+#
+# touch /etc/insaned/events/copy
+# chmod 755 /etc/insaned/events/copy
+#
+# Insaned passes the device name to the script as the first parameter, in case
+# that you have multiple scanners
+
+TMPFILE="/tmp/scan.tiff"
+LOCKFILE="/tmp/copy.lock"
+
+# shamelessly stolen from scanbuttond
+#
+# This example turns your scanner+printer into a photocopier.
+# Fine-tuned for the Epson Perfection 2400, the HP LaserJet 1200 and
+# ISO A4 paper size so that the scanned document matches the printer
+# output as closely as possible.
+#
+# if [ -f $LOCKFILE ]; then
+#   echo "Error: Another scanning operation is currently in progress"
+#   exit 0
+# fi
+# touch $LOCKFILE
+# rm -f $TMPFILE
+# scanimage --device-name "$1" --format tiff --mode Gray --quick-format A4 \
+# --resolution 300 --sharpness 0 --brightness -3 \
+# --gamma-correction "High contrast printing" > $TMPFILE
+# tiff2ps -z -w 8.27 -h 11.69 $TMPFILE | lpr
+# rm -f $LOCKFILE
+

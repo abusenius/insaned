@@ -1,0 +1,9 @@
+# ChangeLog for media-gfx/insaned
+# Copyright 2013-2014 Alex Busenius; Distributed under the GPL v2
+# $Header: $
+
+*insaned-0.0.1 (15 Dec 2013)
+
+  15 Dec 2013; Alex Busenius <the_unknown@gmx.net> insaned-0.0.1.ebuild:
+  Initial ebuild by Alex Busenius <the_unknown@gmx.net>.
+

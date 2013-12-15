@@ -117,10 +117,10 @@ private:
     SANE_Int mVersionCode = 0;
 
     /// Device to use
-    std::string mCurrentDevice;
+    std::string mCurrentDevice = "";
 
     /// Directory where event scripts are located
-    std::string mEventsDir;
+    std::string mEventsDir = "";
 
     /// Time in ms to sleep between polling the sensors
     int mSleepMs = 500;

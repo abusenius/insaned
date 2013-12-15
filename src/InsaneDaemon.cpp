@@ -58,6 +58,10 @@ InsaneDaemon::~InsaneDaemon() noexcept
         log("Calling sane_exit", 1);
         sane_exit();
 
+        ::close(0);
+        ::close(1);
+        ::close(2);
+
         log("Finished", 1);
     } catch (...) {
         log("Error calling sane_exit!", 0);
@@ -142,6 +146,9 @@ void InsaneDaemon::run()
     log("Starting polling sensors of " + mCurrentDevice + " every " + std::to_string(mSleepMs) + " ms", 1);
     while (mRun) {
         if (mSuspendCount <= 0) {
+            // TODO skip reading sensors if
+            // - some process (e.g. xsane, screensaver, screenlocker) is running
+            // - some file (e.g. libsane) is opened by another process
             log("Reading sensors...", 2);
             try {
                 auto sensors = get_sensors();
@@ -201,7 +208,7 @@ void InsaneDaemon::process_event(std::string name)
             }
         }
         log("calling event handler script '" + handler + "'", 2);
-        if (system(handler.c_str()) < 0) {
+        if (system((handler + " " + mCurrentDevice).c_str()) < 0) {
             std::string err = strerror(errno);
             log("Failed to execute script handler '" + handler + "': " + err, 0);
             return;

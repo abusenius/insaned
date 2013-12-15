@@ -37,6 +37,7 @@
 #include <cstring>
 #include <cerrno>
 #include <cstring>
+#include <cstdio>
 
 #include "InsaneDaemon.h"
 #include "InsaneException.h"
@@ -54,7 +55,7 @@ int main(int argc, char ** argv)
     const bool SUSPEND_AFTER_EVENT  = false;
 
     // command line options
-    const char * BASE_OPTSTRING = "d:hvVf:e:s:nLw";
+    const char * BASE_OPTSTRING = "d:hvVf:e:s:nLwp:";
     option basic_options[] = {
         {"device-name", required_argument, nullptr, 'd'},
         {"help", no_argument, nullptr, 'h'},
@@ -66,6 +67,7 @@ int main(int argc, char ** argv)
         {"dont-fork", no_argument, nullptr, 'n'},
         {"list-sensors", no_argument, nullptr, 'L'},
         {"suspend-after-event", no_argument, nullptr, 'w'},
+        {"pid-file", required_argument, nullptr, 'p'},
         {0, 0, nullptr, 0}
     };
 
@@ -83,6 +85,7 @@ int main(int argc, char ** argv)
     bool do_fork = DO_FORK;
     int sleep_ms = SLEEP_MS;
     std::string devname = "";
+    std::string pidfile = "";
     std::string logfile = LOGFILE;
     std::string events_dir = EVENTS_DIR;
 
@@ -120,6 +123,9 @@ int main(int argc, char ** argv)
             break;
         case 'e':
             events_dir = optarg;
+            break;
+        case 'p':
+            pidfile = optarg;
             break;
         case 's':
             try {
@@ -171,6 +177,8 @@ int main(int argc, char ** argv)
             << " -w, --suspend-after-event  suspend sensor polling for 15 seconds after an event\n"
             << "                            handler script was triggered. Use this if insaned\n"
             << "                            tends to interfere with your handlers.\n"
+            << " -p, --pid-file=FILE        if this option is present, the daemon will create\n"
+            << "                            this file and write its PID into it after fork\n"
             << " -v, --verbose              give even more status messages\n"
             << " -h, --help                 display this help message and exit\n"
             << " -V, --version              print version information and exit" << std::endl;
@@ -206,6 +214,7 @@ int main(int argc, char ** argv)
 
     try {
         // TODO su to another UID
+        // TODO drop permissions
         if (do_fork) {
             // fork
             if (pid_t pid = fork()) {
@@ -231,6 +240,7 @@ int main(int argc, char ** argv)
             // second fork ensures the process cannot acquire a controlling terminal.
             if (pid_t pid = fork()) {
                 if (pid > 0) {
+                    // parent
                     return 0;
                 } else {
                     syslog(LOG_ERR | LOG_USER, "Second fork failed: %s", strerror(errno));
@@ -253,7 +263,7 @@ int main(int argc, char ** argv)
             const int flags = O_WRONLY | O_CREAT | O_APPEND;
             const mode_t mode = S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH;
             if (open(logfile.c_str(), flags, mode) < 0) {
-                syslog(LOG_ERR | LOG_USER, "Unable to open output file %s: %s", logfile.c_str(), strerror(errno));
+                syslog(LOG_ERR | LOG_USER, "Unable to open log file %s: %s", logfile.c_str(), strerror(errno));
                 return 1;
             }
 
@@ -261,6 +271,21 @@ int main(int argc, char ** argv)
             if (dup(1) < 0) {
                 syslog(LOG_ERR | LOG_USER, "Unable to dup output descriptor: %s", strerror(errno));
                 return 1;
+            }
+
+            if (!pidfile.empty()) {
+                int fid = open(pidfile.c_str(), O_WRONLY | O_CREAT | O_TRUNC, mode);
+                if (fid < 0) {
+                    syslog(LOG_ERR | LOG_USER, "Unable to open pid file %s: %s", pidfile.c_str(), strerror(errno));
+                    return 1;
+                }
+                FILE * f = fdopen(fid, "w");
+                if (f) {
+                    fprintf(f, "%d\n", getpid());
+                    fclose(f);
+                }
+                close(fid);
+                f = nullptr;
             }
 
             syslog(LOG_INFO | LOG_USER, "Daemon started");

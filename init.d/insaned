@@ -1,0 +1,29 @@
+#!/sbin/runscript
+# Copyright 2013-2014 Alex Busenius
+# Distributed under the terms of the GNU General Public License v2
+
+depend() {
+	after logger saned udev modules
+}
+
+INSANED_PIDFILE="${INSANED_PIDFILE:-/var/run/insaned/insaned.pid}"
+
+start() {
+	ebegin "Starting insaned"
+	checkpath -q -d -m 755 -o ${INSANED_USER}:${INSANED_GROUP} /var/run/insaned
+	checkpath -q -f -m 644 -o ${INSANED_USER}:${INSANED_GROUP} /var/log/insaned.log
+	start-stop-daemon --start --quiet \
+		--pidfile "${INSANED_PIDFILE}" \
+		--user ${INSANED_USER} --group ${INSANED_GROUP} \
+		--nicelevel ${INSANED_NICELEVEL:-0} \
+		--exec /usr/bin/insaned -p ${INSANED_PIDFILE} ${INSANED_EXTRAOPTS}
+	eend $?
+}
+
+stop() {
+	ebegin "Stopping insaned"
+	start-stop-daemon --stop --quiet \
+		--pidfile "${INSANED_PIDFILE}"
+	eend $?
+}
+

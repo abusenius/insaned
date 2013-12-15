@@ -1,0 +1,14 @@
+# /etc/conf.d/insaned: config file for /etc/init.d/insaned
+
+# Adjust scheduling priority on insaned (default: 0)
+#INSANED_NICELEVEL="0"
+
+# Pass extra options to insaned
+INSANED_EXTRAOPTS="--sleep-ms=1000 --suspend-after-event"
+#INSANED_EXTRAOPTS="-vv --sleep-ms=1000 --suspend-after-event"
+
+# it is HIGHLY recommended to use less privileged user
+# event handler scripts are executed with privileges of this user
+INSANED_USER=root
+INSANED_GROUP=root
+

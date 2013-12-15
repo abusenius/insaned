@@ -1,20 +1,20 @@
 
 PROJECT := insaned
 
-CFLAGS := -Wall -Wextra -pedantic -pipe -O2 -std=c++11 -Isrc
+CXXFLAGS=-Wall -Wextra -pedantic -pipe -O2 -std=c++11 -Isrc -g3
 
 
 all : $(PROJECT)
 
-$(PROJECT) : src/insaned.o
-	g++ $(CFLAGS) $^ -o $@ -lsane
+$(PROJECT) : src/insaned.o src/InsaneDaemon.o src/InsaneException.o
+	g++ $(CXXFLAGS) $^ -lsane -o $@
 
-%.o : %.cpp %.h
-	g++ $(CFLAGS) -c $< -o $@
+src/%.o : src/%.cpp src/%.h
+	g++ $(CXXFLAGS) -c $< -o $@
 
 
 .PHONY : clean
 
 clean :
-	rm -rf src/insaned.o $(PROJECT)
+	rm -rf src/*.o $(PROJECT)
 

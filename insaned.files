@@ -1,2 +1,6 @@
 src/config.h
 src/insaned.cpp
+src/InsaneDaemon.h
+src/InsaneDaemon.cpp
+src/InsaneException.h
+src/InsaneException.cpp

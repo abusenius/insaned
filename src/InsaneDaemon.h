@@ -33,6 +33,20 @@
  */
 class InsaneDaemon
 {
+private:
+    /// Helper RAII class
+    class OpenGuard {
+    public:
+        OpenGuard(const std::string & device);
+
+        ~OpenGuard();
+
+    private:
+        InsaneDaemon & mDaemon;
+    };
+
+    friend class OpenGuard;
+
 public:
     /// Daemon name
     static const std::string NAME;
@@ -46,13 +60,26 @@ public:
      */
     ~InsaneDaemon() noexcept;
 
-    void init(bool verbose) noexcept;
+    /**
+     * Initialize the daemon
+     *
+     * @param device_name
+     * @param events_dir
+     * @param sleep_ms
+     * @param verbose
+     * @param log_to_syslog
+     */
+    void init(std::string device_name, std::string events_dir, int sleep_ms, int verbose, bool log_to_syslog) noexcept;
 
-    void open(std::string device_name);
-
-    void close() noexcept;
-
+    /**
+     * Run main loop and poll sensors.
+     */
     void run();
+
+    /**
+     * @return currently used device name
+     */
+    std::string current_device() noexcept;
 
     /**
      * Try to fetch SANE version.
@@ -65,6 +92,12 @@ public:
      * @return device names
      */
     const std::vector<std::string> get_devices();
+
+    /**
+     * Try to fetch list of detected sensors and their state (true: on, false: off)
+     * @return sensor names and values
+     */
+    std::vector<std::pair<std::string, bool>> get_sensors();
 
 private:
     /// Singleton instance
@@ -79,6 +112,15 @@ private:
     /// Device to use
     std::string mCurrentDevice;
 
+    /// Directory where event scripts are located
+    std::string mEventsDir;
+
+    /// Time in ms to sleep between polling the sensors
+    int mSleepMs = 500;
+
+    /// If true, log(..) will log to syslog
+    bool mLogToSyslog = false;
+
     /// List of detected devices
     std::vector<std::string> mDevices;
 
@@ -87,6 +129,9 @@ private:
 
     /// Verbosity level
     int mVerbose = 0;
+
+    /// Run main loop while true
+    bool mRun = true;
 
 
     /** Constructor
@@ -99,6 +144,17 @@ private:
 
 
     /**
+     * Open given device
+     * @param device_name
+     */
+    void open(std::string device_name);
+
+    /**
+     * Close currently opened device, if any
+     */
+    void close() noexcept;
+
+    /**
      * Check given SANE status returned by given operation.
      *
      * @param status
@@ -107,16 +163,35 @@ private:
      */
     bool checkStatus(SANE_Status status, const std::string & operation);
 
+    /**
+     * Log given message to syslog or stdout
+     * @param message
+     * @param verbosity
+     */
     void log(const std::string & message, int verbosity) noexcept;
 
+    /**
+     * @param opt
+     * @return true iff opt points to a sensor option
+     */
     bool is_sensor_option(const SANE_Option_Descriptor * opt);
 
-    void print_option(int opt_num);
+    /**
+     * Fetch value of the given sensor option by its number (as reported by SANE)
+     * @param opt_num
+     * @return pair of (option name, value)
+     */
+    std::pair<std::string, bool> fetch_sensor_value(int opt_num);
 
-    void fetch_options();
+    /**
+     * Fetch and cache internal list of sensors (mSensors)
+     */
+    void fetch_sensors();
 
-    void print_options();
-
+    /**
+     * Signal handler
+     * @param signum
+     */
     static void sighandler(int signum);
 };
 

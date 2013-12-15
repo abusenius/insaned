@@ -2,13 +2,16 @@
 #include "InsaneDaemon.h"
 #include "InsaneException.h"
 
+#include <cassert>
 #include <iostream>
-#include <sstream>
 #include <cstdlib>
 #include <stdexcept>
 #include <csignal>
 #include <unistd.h>
 #include <sys/types.h>
+#include <syslog.h>
+
+#include "Timer.h"
 
 
 const std::string InsaneDaemon::NAME = "insaned";
@@ -25,7 +28,10 @@ InsaneDaemon & InsaneDaemon::instance() noexcept
 InsaneDaemon::InsaneDaemon()
 {
     log("Initializing...", 1);
-    checkStatus(sane_init(&mVersionCode, NULL), "sane_init");
+    Timer t;
+    checkStatus(sane_init(&mVersionCode, nullptr), "sane_init");
+    log("timer: sane_init: " + std::to_string(t.restart()) + " ms", 2);
+
 #ifdef SIGHUP
     signal (SIGHUP, InsaneDaemon::sighandler);
 #endif
@@ -42,7 +48,7 @@ InsaneDaemon::~InsaneDaemon() noexcept
     log("Exiting...", 1);
     close();
     try {
-        mHandle = NULL;
+        mHandle = nullptr;
         log("Calling sane_exit", 1);
         sane_exit();
 
@@ -53,9 +59,16 @@ InsaneDaemon::~InsaneDaemon() noexcept
 }
 
 
-void InsaneDaemon::init(bool verbose) noexcept
+void InsaneDaemon::init(std::string device_name, std::string events_dir, int sleep_ms, int verbose, bool log_to_syslog) noexcept
 {
+    mCurrentDevice = device_name;
+    mEventsDir = events_dir;
+    mSleepMs = sleep_ms;
+    if (mSleepMs <= 1) {
+        throw std::out_of_range("Value of sleep ms is out of range");
+    }
     mVerbose = verbose;
+    mLogToSyslog = log_to_syslog;
 }
 
 
@@ -63,6 +76,7 @@ void InsaneDaemon::open(std::string device_name)
 {
     close();
 
+    Timer t;
     if (device_name.empty())
     {
         /* If no device name was specified explicitly, we look at the
@@ -88,6 +102,7 @@ void InsaneDaemon::open(std::string device_name)
         }
         throw InsaneException("Failed to open device '" + device_name + "'");
     }
+    log("timer: sane_open: " + std::to_string(t.restart()) + " ms", 2);
 }
 
 
@@ -97,7 +112,10 @@ void InsaneDaemon::close() noexcept
         if (mHandle)
         {
             log("Closing device '" + mCurrentDevice + "'", 1);
+            Timer t;
             sane_close(mHandle);
+            log("timer: sane_close: " + std::to_string(t.restart()) + " ms", 2);
+
         }
     } catch (...) {
         log("Error closing device!", 0);
@@ -108,17 +126,33 @@ void InsaneDaemon::close() noexcept
 
 void InsaneDaemon::run()
 {
-    log("Running...", 1);
-    fetch_options();
-    print_options();
+    mRun = true;
+    {
+        // try to open the device to select one if no device was given
+        OpenGuard g(mCurrentDevice);
+    }
+
+    log("Starting polling sensors of " + mCurrentDevice + " every " + std::to_string(mSleepMs) + " ms", 1);
+    while (mRun) {
+        log("Reading sensors...", 2);
+
+        auto sensors = get_sensors();
+
+        usleep(mSleepMs * 1000);
+    }
+}
+
+
+std::string InsaneDaemon::current_device() noexcept
+{
+    return mCurrentDevice;
 }
 
 
 std::string InsaneDaemon::get_sane_version() noexcept
 {
-    std::stringstream s;
-    s << SANE_VERSION_MAJOR(mVersionCode) << "." << SANE_VERSION_MINOR(mVersionCode) << "." << SANE_VERSION_BUILD(mVersionCode);
-    return s.str();
+    return std::to_string(SANE_VERSION_MAJOR(mVersionCode)) + "." + std::to_string(SANE_VERSION_MINOR(mVersionCode))
+            + "." + std::to_string(SANE_VERSION_BUILD(mVersionCode));
 }
 
 
@@ -126,6 +160,7 @@ const std::vector<std::string> InsaneDaemon::get_devices()
 {
     if (mDevices.empty()) {
         log("Fetching device list...", 1);
+        Timer t;
         const SANE_Device ** device_list;
 
         if (!checkStatus(sane_get_devices(&device_list, SANE_FALSE), "sane_get_devices")) {
@@ -137,8 +172,26 @@ const std::vector<std::string> InsaneDaemon::get_devices()
         for (int i = 0; device_list[i]; ++i) {
             mDevices.push_back(device_list[i]->name);
         }
+        log("timer: sane_get_devices: " + std::to_string(t.restart()) + " ms", 2);
     }
     return mDevices;
+}
+
+
+std::vector<std::pair<std::string, bool> > InsaneDaemon::get_sensors()
+{
+    OpenGuard g(mCurrentDevice);
+
+    if (mSensors.empty()) {
+        fetch_sensors();
+    }
+    Timer t;
+    std::vector<std::pair<std::string, bool> > result;
+    for (auto & entry : mSensors) {
+        result.push_back(fetch_sensor_value(entry.second));
+    }
+    log("timer: fetch all sensor values: " + std::to_string(t.restart()) + " ms", 2);
+    return result;
 }
 
 
@@ -150,7 +203,7 @@ bool InsaneDaemon::checkStatus(SANE_Status status, const std::string & operation
     } else if (status == SANE_STATUS_GOOD) {
         return true;
     }
-    log(operation + " failed: " + std::string(sane_strstatus(status)), 1);
+    log(operation + " failed: " + std::string(sane_strstatus(status)), 0);
     // TODO throw?
     return false;
 }
@@ -160,13 +213,21 @@ void InsaneDaemon::log(const std::string & message, int verbosity) noexcept
 {
     try {
         if (mVerbose >= verbosity) {
-            // TODO syslog
-            std::cerr << InsaneDaemon::NAME << ": " << message << std::endl;
+            if (mLogToSyslog) {
+                syslog((verbosity == 1 ? LOG_INFO : LOG_ERR) | LOG_USER, "%s: %s", InsaneDaemon::NAME.c_str(), message.c_str());
+            } else {
+                std::cerr << InsaneDaemon::NAME << ": " << message << std::endl;
+            }
         }
     } catch (...) {
-        // try to log on stderr
+        // try to log on stderr if syslog failed somehow
         try {
-            std::cerr << InsaneDaemon::NAME << ": " << message << std::endl;
+            if (mLogToSyslog) {
+                std::cerr << InsaneDaemon::NAME << ": " << message << std::endl;
+            } else {
+                // die
+                std::abort();
+            }
         } catch (...) {
             // nothing helps, die
             std::abort();
@@ -186,10 +247,12 @@ bool InsaneDaemon::is_sensor_option(const SANE_Option_Descriptor * opt)
 }
 
 
-void InsaneDaemon::fetch_options()
+void InsaneDaemon::fetch_sensors()
 {
+    assert(mHandle);
+    Timer t;
     const SANE_Option_Descriptor * opt = sane_get_option_descriptor(mHandle, 0);
-    if (opt == NULL) {
+    if (opt == nullptr) {
         log("Could not get option descriptor for option 0", 0);
         throw InsaneException("Could not fetch device options");
     }
@@ -203,10 +266,8 @@ void InsaneDaemon::fetch_options()
     for (int i = 1; i < num_dev_options; ++i)
     {
         opt = sane_get_option_descriptor(mHandle, i);
-        if (opt == NULL) {
-            std::stringstream s;
-            s << "Could not get option descriptor for option " << i;
-            log(s.str(), 0);
+        if (opt == nullptr) {
+            log("Could not get option descriptor for option " + std::to_string(i), 0);
             throw InsaneException("Could not fetch device options");
         }
 
@@ -214,21 +275,24 @@ void InsaneDaemon::fetch_options()
             mSensors[std::string(opt->name)] = i;
         }
     }
+    log("timer: fetch_sensors: " + std::to_string(t.restart()) + " ms", 2);
 }
 
 
-void InsaneDaemon::print_option(int opt_num)
+std::pair<std::string, bool> InsaneDaemon::fetch_sensor_value(int opt_num)
 {
+    assert(mHandle);
     const SANE_Option_Descriptor * opt = sane_get_option_descriptor(mHandle, opt_num);
 
     if (!opt || opt->type == SANE_TYPE_GROUP) {
-        return;
+        throw InsaneException("Invalid option number: " + std::to_string(opt_num));
     }
 
-    /* print the sensor option */
+    std::pair<std::string, bool> result;
     if (is_sensor_option(opt)) {
         /* name */
-        std::cout << "    " << opt->name << " ";
+        result.first = opt->name;
+        result.second = false;
         /* print current option value */
         if (opt->size == sizeof (SANE_Word)) {
             SANE_Word val;
@@ -237,42 +301,63 @@ void InsaneDaemon::print_option(int opt_num)
                 throw InsaneException("Could not fetch value of option " + std::string(opt->name));
             }
             if (opt->type == SANE_TYPE_BOOL) {
-                std::cout << (*reinterpret_cast<SANE_Bool *>(&val) ? "[yes]" : "[no]");
+                result.second = *reinterpret_cast<SANE_Bool *>(&val);
             }
         } else {
-            std::cout << "[unsupported size: " << opt->size << "]";
+            throw InsaneException("Unsupported size: " + std::to_string(opt->size) + " of option " + std::string(opt->name));
         }
-        std::cout << '\n';
     } else {
-        std::cout << "    " << opt->name << " [not a sensor option]\n";
+        throw InsaneException("Could not fetch option " + std::string(opt->name) + ", it is not a sensor option");
     }
-}
-
-
-void InsaneDaemon::print_options()
-{
-    std::cout << "Sensors of device '" << mCurrentDevice << "':\n";
-    for (auto & entry : mSensors) {
-        print_option(entry.second);
-    }
+    return result;
 }
 
 
 void InsaneDaemon::sighandler(int signum)
 {
     static bool first_time = true;
+    InsaneDaemon & daemon = InsaneDaemon::instance();
 
-    if (InsaneDaemon::instance().mHandle) {
-        std::stringstream s;
-        s << "Received signal " << signum;
-        InsaneDaemon::instance().log(s.str(), 1);
+    daemon.log("Received signal " + std::to_string(signum), 1);
+    switch (signum) {
+#ifdef SIGHUP
+    case SIGHUP:
+        daemon.mSensors.clear();
+        daemon.mDevices.clear();
+        break;
+#endif
+#ifdef SIGPIPE
+    case SIGPIPE:
+#endif
+    case SIGINT:
+    case SIGTERM:
+        daemon.mRun = false;
+        break;
+    default:
+        // do nothing
+        break;
+    }
+
+    if (daemon.mHandle) {
         if (first_time) {
             first_time = false;
-            InsaneDaemon::instance().log("Trying to stop scanner", 1);
-            sane_cancel(InsaneDaemon::instance().mHandle);
+            daemon.log("Trying to stop scanner", 1);
+            sane_cancel(daemon.mHandle);
         } else {
-            InsaneDaemon::instance().log("Aborting", 1);
+            daemon.log("Aborting", 1);
             std::exit(2);
         }
     }
+}
+
+
+InsaneDaemon::OpenGuard::OpenGuard(const std::string & device)
+    : mDaemon(InsaneDaemon::instance()) {
+    mDaemon.log("OPEN " + device, 3);
+    mDaemon.open(device);
+}
+
+InsaneDaemon::OpenGuard::~OpenGuard() {
+    mDaemon.log("CLOSE " + mDaemon.current_device(), 3);
+    mDaemon.close();
 }

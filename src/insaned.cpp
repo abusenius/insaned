@@ -27,19 +27,43 @@
 #include <iostream>
 #include <string>
 #include <getopt.h>
+#include <syslog.h>
+#include <unistd.h>
+#include <cstdio>
+#include <cstdlib>
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <fcntl.h>
+#include <cstring>
+#include <cerrno>
 
 #include "InsaneDaemon.h"
 #include "InsaneException.h"
 
 int main(int argc, char ** argv)
 {
-    const char * BASE_OPTSTRING = "d:hvV";
+    // defaults
+    const std::string LOGFILE       = "/var/log/" + InsaneDaemon::NAME + ".log";
+    const std::string EVENTS_DIR    = "/etc/" + InsaneDaemon::NAME + "/events";
+    const int SLEEP_MS              = 500;
+    const int SLEEP_MIN             = 50;
+    const int SLEEP_MAX             = 5000;
+    const int VERBOSITY             = 0;
+    const bool DO_FORK              = true;
+
+    // command line options
+    const char * BASE_OPTSTRING = "d:hvVf:e:s:nL";
     option basic_options[] = {
-        {"device-name", required_argument, NULL, 'd'},
-        {"help", no_argument, NULL, 'h'},
-        {"verbose", no_argument, NULL, 'v'},
-        {"version", no_argument, NULL, 'V'},
-        {0, 0, NULL, 0}
+        {"device-name", required_argument, nullptr, 'd'},
+        {"help", no_argument, nullptr, 'h'},
+        {"verbose", no_argument, nullptr, 'v'},
+        {"version", no_argument, nullptr, 'V'},
+        {"log-file", required_argument, nullptr, 'f'},
+        {"events-dir", required_argument, nullptr, 'e'},
+        {"sleep-ms", required_argument, nullptr, 's'},
+        {"dont-fork", no_argument, nullptr, 'n'},
+        {"list-sensors", no_argument, nullptr, 'L'},
+        {0, 0, nullptr, 0}
     };
 
     std::string prog_name;
@@ -50,8 +74,13 @@ int main(int argc, char ** argv)
     }
 
     bool help = false;
-    int verbose = 0;
-    std::string devname;
+    bool list = false;
+    int verbose = VERBOSITY;
+    bool do_fork = DO_FORK;
+    int sleep_ms = SLEEP_MS;
+    std::string devname = "";
+    std::string logfile = LOGFILE;
+    std::string events_dir = EVENTS_DIR;
 
     // get dameon instance
     InsaneDaemon & daemon = InsaneDaemon::instance();
@@ -72,41 +101,92 @@ int main(int argc, char ** argv)
         case 'h':
             help = true;
             break;
+        case 'L':
+            list = true;
+            break;
         case 'v':
-            ++verbose;
+            verbose++;
             break;
         case 'V':
             std::cout << InsaneDaemon::NAME << " " << VERSION
                       << ". SANE backend version " << daemon.get_sane_version() << std::endl;
             return 0;
+        case 'f':
+            logfile = optarg;
+            break;
+        case 'e':
+            events_dir = optarg;
+            break;
+        case 's':
+            try {
+                sleep_ms = std::stoi(std::string(optarg));
+                if (sleep_ms < SLEEP_MIN || SLEEP_MAX < sleep_ms) {
+                    throw std::out_of_range("The value must be in range " + std::to_string(SLEEP_MIN) + ".." + std::to_string(SLEEP_MAX));
+                }
+            } catch (std::exception & e) {
+                std::cerr << "Invalid value of --sleep-ms (" << optarg << "): " << e.what() << std::endl;
+                return 1;
+            }
+            break;
+        case 'n':
+            do_fork = false;
+            break;
         default:
             std::cerr << "Unknown option: " << static_cast<char>(ch) << std::endl;
             return 1;
             break;
         }
     }
-    daemon.init(verbose);
+
+    daemon.init(devname, events_dir, sleep_ms, verbose, do_fork && !(help || list));
 
     /* print help and device list */
     if (help) {
-        std::cout << "Usage: " << prog_name << " [OPTION]...\n"
+        std::cout << "Usage: " << prog_name << " [OPTIONS]...\n"
             << "\n"
-            << "Start polling sensors (buttons) of a scanner device and run callback scripts\n"
-            << "when a button is pressed.\n"
+            << "Start polling sensors of a scanner device and run the corresponding callback\n"
+            << "script when a button is pressed.\n"
             << "\n"
             << "Parameters are separated by a blank from single-character options (e.g.\n"
             << "-d epson) and by a \"=\" from multi-character options (e.g. --device-name=epson).\n"
-            << " -d, --device-name=DEVICE   use a given scanner device (e.g. hp:/dev/scanner)\n"
-            << " -h, --help                 display this help message and exit\n"
+            << " -d, --device-name=DEVICE   use the given scanner device instead of the first\n"
+            << "                            available device\n"
+            << " -f, --log-file=FILE        use the given log file instead of default\n"
+            << "                            (" << LOGFILE << ")\n"
+            << " -e, --events-dir=DIR       execute event scripts from the given directory\n"
+            << "                            instead of the default (" << EVENTS_DIR << ")\n"
+            << " -s, --sleep-ms=NUMBER      sleep for the given amount of ms between polling the\n"
+            << "                            sensors instead of default (" << SLEEP_MS << " ms), must be in\n"
+            << "                            range " << SLEEP_MIN << ".." << SLEEP_MAX << "\n"
+            << " -n, --dont-fork            do not fork into background\n"
+            << " -L, --list-sensors         list sensors that will be monitored along with their\n"
+            << "                            current state and exit. See also --device-name\n"
             << " -v, --verbose              give even more status messages\n"
-            << " -V, --version              print version information" << std::endl;
+            << " -h, --help                 display this help message and exit\n"
+            << " -V, --version              print version information and exit" << std::endl;
 
-        std::cout << "\nList of available devices:" << std::endl;
+        std::cout << "\nList of available devices:\n";
         try {
             for (auto & device : daemon.get_devices()) {
-                std::cout << "\n    " << device;
+                std::cout << "    " << device << std::endl;
             }
-            std::cout << std::endl;
+        } catch (InsaneException & e) {
+            std::cerr << "\n" << InsaneDaemon::NAME << ": " << e.what() << std::endl;
+            return 1;
+        }
+        if (!list) {
+            return 0;
+        }
+        std::cout << std::endl;
+    }
+
+    if (list) {
+        try {
+            auto sensors = daemon.get_sensors(); // updates current device if it was not set
+            std::cout << "List of sensors for device '" << daemon.current_device() << "':" << std::endl;
+            for (auto & pair : sensors) {
+                std::cout << "    " << pair.first << "\t" << (pair.second ? "[yes]" : "[no]") << std::endl;
+            }
         } catch (InsaneException & e) {
             std::cerr << "\n" << InsaneDaemon::NAME << ": " << e.what() << std::endl;
             return 1;
@@ -115,14 +195,82 @@ int main(int argc, char ** argv)
     }
 
     try {
-        // TODO fork
-        daemon.open(devname);
+        if (do_fork) {
+            // fork
+            if (pid_t pid = fork()) {
+                if (pid > 0) {
+                    // parent process
+                    return 0;
+                } else {
+                    syslog(LOG_ERR | LOG_USER, "First fork failed: %s", strerror(errno));
+                    return 1;
+                }
+            }
+
+            // detach
+            setsid();
+
+            // some settings
+            if (chdir("/") < 0) {
+                syslog(LOG_ERR | LOG_USER, "Unable to chdir to /: %s", strerror(errno));
+                return 1;
+            }
+            umask(0);
+
+            // second fork ensures the process cannot acquire a controlling terminal.
+            if (pid_t pid = fork()) {
+                if (pid > 0) {
+                    return 0;
+                } else {
+                    syslog(LOG_ERR | LOG_USER, "Second fork failed: %s", strerror(errno));
+                    return 1;
+                }
+            }
+
+            // close streams
+            close(0);
+            close(1);
+            close(2);
+
+            // disable standard input.
+            if (open("/dev/null", O_RDONLY) < 0) {
+                syslog(LOG_ERR | LOG_USER, "Unable to open /dev/null: %s", strerror(errno));
+                return 1;
+            }
+
+            // send standard output to a log file
+            const int flags = O_WRONLY | O_CREAT | O_APPEND;
+            const mode_t mode = S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH;
+            if (open(logfile.c_str(), flags, mode) < 0) {
+                syslog(LOG_ERR | LOG_USER, "Unable to open output file %s: %s", logfile.c_str(), strerror(errno));
+                return 1;
+            }
+
+            // send standard error to the same log file
+            if (dup(1) < 0) {
+                syslog(LOG_ERR | LOG_USER, "Unable to dup output descriptor: %s", strerror(errno));
+                return 1;
+            }
+
+            syslog(LOG_INFO | LOG_USER, "Daemon started");
+        }
+
+        // run daemon
         daemon.run();
+
+        if (do_fork) {
+            syslog(LOG_INFO | LOG_USER, "Daemon stopped");
+        }
+
+        return 0;
     } catch (InsaneException & e) {
-        std::cerr << "\n" << InsaneDaemon::NAME << ": " << e.what() << std::endl;
-        return 1;
+        syslog(LOG_ERR | LOG_USER, "Exception: %s", e.what());
+        std::cerr << "\n" << InsaneDaemon::NAME << ": Exception: " << e.what() << std::endl;
+    } catch (std::exception & e) {
+        syslog(LOG_ERR | LOG_USER, "Exception: %s", e.what());
+        std::cerr << "Exception: " << e.what() << std::endl;
     }
 
-    return 0;
+    return 1;
 }
 

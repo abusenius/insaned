@@ -169,7 +169,6 @@ fetch_options (SANE_Device * device)
 
         ++option_count;
     }
-    option_count += NELEMS (basic_options);
 }
 
 static void
@@ -217,7 +216,7 @@ static void print_options(SANE_Device * device, SANE_Int num_dev_options, SANE_B
 int
 main (int argc, char **argv)
 {
-    int ch, i, index, all_options_len;
+    int ch, i, index;
     const SANE_Device **device_list;
     SANE_Int num_dev_options = 0;
     const char *devname = 0;
@@ -278,8 +277,8 @@ main (int argc, char **argv)
     {
         printf ("Usage: %s [OPTION]...\n\
 \n\
-Start image acquisition on a scanner device and write image data to\n\
-standard output.\n\
+Start polling sensors (buttons) of a scanner device and run callback scripts\n\
+when a button is pressed.\n\
 \n\
 Parameters are separated by a blank from single-character options (e.g.\n\
 -d epson) and by a \"=\" from multi-character options (e.g. --device-name=epson).\n\
@@ -358,7 +357,6 @@ Parameters are separated by a blank from single-character options (e.g.\n\
         }
 
         /* malloc global option lists */
-        all_options_len = num_dev_options + NELEMS (basic_options) + 1;
         option_number_len = num_dev_options;
         option_number = malloc (option_number_len * sizeof (option_number[0]));
         if (!option_number)
@@ -374,7 +372,7 @@ Parameters are separated by a blank from single-character options (e.g.\n\
         /*  list all device-specific options */
         if (all)
         {
-            printf ("\nAll options specific to device `%s':\n", devname);
+            printf ("\nSensors for device `%s':\n", devname);
             print_options(device, num_dev_options, SANE_TRUE);
             exit (0);
         }
@@ -383,10 +381,7 @@ Parameters are separated by a blank from single-character options (e.g.\n\
     /* output device list */
     if (help)
     {
-        printf ("\
-Type ``%s --help -d DEVICE'' to get list of all options for DEVICE.\n\
-\n\
-List of available devices:", prog_name);
+        printf ("\nList of available devices:");
         status = sane_get_devices (&device_list, SANE_FALSE);
         if (status == SANE_STATUS_GOOD)
         {
@@ -424,3 +419,4 @@ List of available devices:", prog_name);
     exit (status);
     return status;
 }
+

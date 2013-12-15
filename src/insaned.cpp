@@ -36,6 +36,7 @@
 #include <fcntl.h>
 #include <cstring>
 #include <cerrno>
+#include <cstring>
 
 #include "InsaneDaemon.h"
 #include "InsaneException.h"
@@ -50,9 +51,10 @@ int main(int argc, char ** argv)
     const int SLEEP_MAX             = 5000;
     const int VERBOSITY             = 0;
     const bool DO_FORK              = true;
+    const bool SUSPEND_AFTER_EVENT  = false;
 
     // command line options
-    const char * BASE_OPTSTRING = "d:hvVf:e:s:nL";
+    const char * BASE_OPTSTRING = "d:hvVf:e:s:nLw";
     option basic_options[] = {
         {"device-name", required_argument, nullptr, 'd'},
         {"help", no_argument, nullptr, 'h'},
@@ -63,6 +65,7 @@ int main(int argc, char ** argv)
         {"sleep-ms", required_argument, nullptr, 's'},
         {"dont-fork", no_argument, nullptr, 'n'},
         {"list-sensors", no_argument, nullptr, 'L'},
+        {"suspend-after-event", no_argument, nullptr, 'w'},
         {0, 0, nullptr, 0}
     };
 
@@ -75,6 +78,7 @@ int main(int argc, char ** argv)
 
     bool help = false;
     bool list = false;
+    bool suspend = SUSPEND_AFTER_EVENT;
     int verbose = VERBOSITY;
     bool do_fork = DO_FORK;
     int sleep_ms = SLEEP_MS;
@@ -131,6 +135,9 @@ int main(int argc, char ** argv)
         case 'n':
             do_fork = false;
             break;
+        case 'w':
+            suspend = true;
+            break;
         default:
             std::cerr << "Unknown option: " << static_cast<char>(ch) << std::endl;
             return 1;
@@ -138,7 +145,7 @@ int main(int argc, char ** argv)
         }
     }
 
-    daemon.init(devname, events_dir, sleep_ms, verbose, do_fork && !(help || list));
+    daemon.init(devname, events_dir, sleep_ms, verbose, do_fork && !(help || list), suspend);
 
     /* print help and device list */
     if (help) {
@@ -161,6 +168,9 @@ int main(int argc, char ** argv)
             << " -n, --dont-fork            do not fork into background\n"
             << " -L, --list-sensors         list sensors that will be monitored along with their\n"
             << "                            current state and exit. See also --device-name\n"
+            << " -w, --suspend-after-event  suspend sensor polling for 15 seconds after an event\n"
+            << "                            handler script was triggered. Use this if insaned\n"
+            << "                            tends to interfere with your handlers.\n"
             << " -v, --verbose              give even more status messages\n"
             << " -h, --help                 display this help message and exit\n"
             << " -V, --version              print version information and exit" << std::endl;
@@ -195,6 +205,7 @@ int main(int argc, char ** argv)
     }
 
     try {
+        // TODO su to another UID
         if (do_fork) {
             // fork
             if (pid_t pid = fork()) {

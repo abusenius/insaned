@@ -68,8 +68,9 @@ public:
      * @param sleep_ms
      * @param verbose
      * @param log_to_syslog
+     * @param suspend_after_event
      */
-    void init(std::string device_name, std::string events_dir, int sleep_ms, int verbose, bool log_to_syslog) noexcept;
+    void init(std::string device_name, std::string events_dir, int sleep_ms, int verbose, bool log_to_syslog, bool suspend_after_event) noexcept;
 
     /**
      * Run main loop and poll sensors.
@@ -100,6 +101,12 @@ public:
     std::vector<std::pair<std::string, bool>> get_sensors();
 
 private:
+    /// Timeout in ms to skip events for after trigger (avoid multiple invocations)
+    static const int SKIP_TIMEOUT_MS;
+
+    /// Timeout in ms to suspend main loop when device is busy
+    static const int BUSY_TIMEOUT_MS;
+
     /// Singleton instance
     static InsaneDaemon mInstance;
 
@@ -121,6 +128,9 @@ private:
     /// If true, log(..) will log to syslog
     bool mLogToSyslog = false;
 
+    /// Suspend main loop right after event handler script was successfully executed, assuming that device is busy
+    bool mSuspendAfterEvent = false;
+
     /// List of detected devices
     std::vector<std::string> mDevices;
 
@@ -130,8 +140,14 @@ private:
     /// Verbosity level
     int mVerbose = 0;
 
-    /// Run main loop while true
-    bool mRun = true;
+    /// Main loop is run while true
+    bool mRun = false;
+
+    /// Counter to suspend the main loop when device is busy
+    int mSuspendCount = 0;
+
+    /// Used to skip events after trigger
+    std::map<std::string, int> mRepeatCount;
 
 
     /** Constructor
@@ -187,6 +203,13 @@ private:
      * Fetch and cache internal list of sensors (mSensors)
      */
     void fetch_sensors();
+
+    /**
+     * Execute event script, if it exists.
+     *
+     * @param name sensor name
+     */
+    void process_event(std::string name);
 
     /**
      * Signal handler

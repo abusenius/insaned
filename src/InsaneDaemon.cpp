@@ -9,12 +9,18 @@
 #include <csignal>
 #include <unistd.h>
 #include <sys/types.h>
+#include <sys/stat.h>
 #include <syslog.h>
+#include <cerrno>
+#include <cstring>
 
 #include "Timer.h"
 
 
 const std::string InsaneDaemon::NAME = "insaned";
+
+const int InsaneDaemon::SKIP_TIMEOUT_MS = 2500;
+const int InsaneDaemon::BUSY_TIMEOUT_MS = 15000;
 
 InsaneDaemon InsaneDaemon::mInstance;
 
@@ -59,7 +65,7 @@ InsaneDaemon::~InsaneDaemon() noexcept
 }
 
 
-void InsaneDaemon::init(std::string device_name, std::string events_dir, int sleep_ms, int verbose, bool log_to_syslog) noexcept
+void InsaneDaemon::init(std::string device_name, std::string events_dir, int sleep_ms, int verbose, bool log_to_syslog, bool suspend_after_event) noexcept
 {
     mCurrentDevice = device_name;
     mEventsDir = events_dir;
@@ -69,6 +75,7 @@ void InsaneDaemon::init(std::string device_name, std::string events_dir, int sle
     }
     mVerbose = verbose;
     mLogToSyslog = log_to_syslog;
+    mSuspendAfterEvent = suspend_after_event;
 }
 
 
@@ -89,7 +96,7 @@ void InsaneDaemon::open(std::string device_name)
             device_name = get_devices().at(0);
         }
     }
-    log("Opening device '" + device_name + "'", 1);
+    log("Opening device '" + device_name + "'", 2);
     mCurrentDevice = device_name;
 
     if (!checkStatus(sane_open(device_name.c_str(), &mHandle), "opening device '" + device_name + "'")) {
@@ -111,7 +118,7 @@ void InsaneDaemon::close() noexcept
     try {
         if (mHandle)
         {
-            log("Closing device '" + mCurrentDevice + "'", 1);
+            log("Closing device '" + mCurrentDevice + "'", 2);
             Timer t;
             sane_close(mHandle);
             log("timer: sane_close: " + std::to_string(t.restart()) + " ms", 2);
@@ -134,11 +141,76 @@ void InsaneDaemon::run()
 
     log("Starting polling sensors of " + mCurrentDevice + " every " + std::to_string(mSleepMs) + " ms", 1);
     while (mRun) {
-        log("Reading sensors...", 2);
-
-        auto sensors = get_sensors();
+        if (mSuspendCount <= 0) {
+            log("Reading sensors...", 2);
+            try {
+                auto sensors = get_sensors();
+                for (auto & sensor : sensors) {
+                    if (mRepeatCount.find(sensor.first) != mRepeatCount.end()) {
+                        mRepeatCount[sensor.first]--;
+                    }
+                    if (sensor.second) {
+                        process_event(sensor.first);
+                    }
+                }
+            } catch (InsaneException & e) {
+                log(e.what(), 1);
+            }
+        } else {
+            log("Reading sensors is suspended: " + std::to_string(mSuspendCount) + " events left", 2);
+            mSuspendCount--;
+        }
 
         usleep(mSleepMs * 1000);
+    }
+}
+
+
+void InsaneDaemon::process_event(std::string name)
+{
+    if (mRepeatCount.find(name) != mRepeatCount.end()) {
+        int count = mRepeatCount[name];
+        if (count > 0) {
+            log("Skipping event '" + name + "', will wait for " + std::to_string(count) + " more periods", 2);
+            return;
+        }
+    }
+    mRepeatCount[name] = SKIP_TIMEOUT_MS / mSleepMs;
+
+    log("Processing event '" + name + "'", 1);
+    std::string handler = mEventsDir + "/" + name;
+    struct stat f;
+    if (stat(handler.c_str(), &f) < 0) {
+        std::string err = strerror(errno);
+        if (errno == ENOENT || errno == ENOTDIR) {
+            log("script handler '" + handler + "' does not exist, please create an empty executable "
+                "file to silence this warning, error: " + err, 0);
+            return;
+        }
+        log("cannot stat event handler script '" + handler + "': " + err, 0);
+        return;
+    }
+    if (S_ISREG((f.st_mode))) {
+        if (!((f.st_mode & S_IXUSR) | (f.st_mode & S_IXGRP) | (f.st_mode & S_IXOTH))) {
+            log("warning, script handler '" + handler + "' is not executable", 0);
+            return;
+        } else {
+            if (f.st_size == 0) {
+                // ignore
+                return;
+            }
+        }
+        log("calling event handler script '" + handler + "'", 2);
+        if (system(handler.c_str()) < 0) {
+            std::string err = strerror(errno);
+            log("Failed to execute script handler '" + handler + "': " + err, 0);
+            return;
+        } else if (mSuspendAfterEvent) {
+            mSuspendCount = BUSY_TIMEOUT_MS / mSleepMs;
+        }
+    } else {
+        log("warning, script handler '" + handler + "' is not a regular file", 0);
+        return;
     }
 }
 
@@ -199,6 +271,7 @@ bool InsaneDaemon::checkStatus(SANE_Status status, const std::string & operation
 {
     if (status == SANE_STATUS_DEVICE_BUSY) {
         log(operation + " returned status DEVICE BUSY", 1);
+        mSuspendCount = BUSY_TIMEOUT_MS / mSleepMs;
         return false;
     } else if (status == SANE_STATUS_GOOD) {
         return true;

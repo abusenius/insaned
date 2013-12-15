@@ -1,16 +1,16 @@
 
 PROJECT := insaned
 
-CFLAGS := -Wall -Wextra -pedantic -pipe -O2 -std=c99 -Isrc
+CFLAGS := -Wall -Wextra -pedantic -pipe -O2 -std=c++11 -Isrc
 
 
 all : $(PROJECT)
 
 $(PROJECT) : src/insaned.o
-	gcc $(CFLAGS) $^ -o $@ -lsane
+	g++ $(CFLAGS) $^ -o $@ -lsane
 
-%.o : %.c %.h
-	gcc $(CFLAGS) -c $< -o $@
+%.o : %.cpp %.h
+	g++ $(CFLAGS) -c $< -o $@
 
 
 .PHONY : clean

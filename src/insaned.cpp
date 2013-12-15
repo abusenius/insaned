@@ -358,7 +358,7 @@ Parameters are separated by a blank from single-character options (e.g.\n\
 
         /* malloc global option lists */
         option_number_len = num_dev_options;
-        option_number = malloc (option_number_len * sizeof (option_number[0]));
+        option_number = (int*)malloc (option_number_len * sizeof (option_number[0]));
         if (!option_number)
         {
             fprintf (stderr, "%s: out of memory in main()\n",
@@ -367,13 +367,13 @@ Parameters are separated by a blank from single-character options (e.g.\n\
         }
 
         /* load global option lists */
-        fetch_options (device);
+        fetch_options ((SANE_Device *)device);
 
         /*  list all device-specific options */
         if (all)
         {
             printf ("\nSensors for device `%s':\n", devname);
-            print_options(device, num_dev_options, SANE_TRUE);
+            print_options((SANE_Device *)device, num_dev_options, SANE_TRUE);
             exit (0);
         }
     }

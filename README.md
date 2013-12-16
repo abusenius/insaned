@@ -93,7 +93,6 @@ Installation
 
 To compile insaned, run:
 
-    cd insaned/
     make
 
 in the project directory. The daemon will be created in the project directory and called "insaned". You can run it in foreground for testing purposes as follows:

@@ -23,7 +23,9 @@ Insaned periodically polls your scanner using the SANE library and runs the corr
 
 It should work with all backends that expose buttons as "Sensors". The daemon reads the value of all sensors every N milliseconds (default: 500) and starts an event handler script named by the sensor name. Polling does not result in a noticeable CPU load, but produces some I/O load. Therefore, it might not be a good idea to run this daemon on a laptop, since it will probably prevent USB bus from entering a low power mode or even keep the laptop awake (not tested yet).
 
-Currently, insaned was only tested on Gentoo Linux with sane-backends-1.0.24 and a Canon LiDE 210 flatbed scanner (genesys backend, USB ID 04a9:190a).
+Currently, insaned was tested on:
+* Gentoo Linux with sane-backends-1.0.24 and a Canon LiDE 210 flatbed scanner (genesys backend, USB ID 04a9:190a)
+* Raspberry Pi with HP Scanjet 2400c (thanks to GaryA)
 
 
 Why

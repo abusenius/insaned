@@ -34,5 +34,10 @@ src_install() {
 
 	exeinto /etc/insaned/events || die "install failed"
 	doexe events/example || die "install failed"
+	doexe events/copy || die "install failed"
+	doexe events/email || die "install failed"
+	doexe events/extra || die "install failed"
+	doexe events/file || die "install failed"
+	doexe events/scan || die "install failed"
 }
 

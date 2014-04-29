@@ -1,0 +1,26 @@
+#!/bin/sh
+
+# scans an image with 150 dpi, autocrops and starts thunderbird with a new email and the scanned
+# image attached
+# scanimage options are tuned for Canon LiDE 210
+
+TMPFILE="/tmp/scan.tiff"
+OUTFILE="/tmp/email-$(date '+%Y-%m-%d-%H-%M-%S').jpg"
+LOCKFILE="/tmp/copy.lock"
+INSANED_LOGFILE="/tmp/insaned.log"
+
+if [ -f $LOCKFILE ]; then
+    echo "Error: Another scanning operation is currently in progress" >> $INSANED_LOGFILE
+    exit 0
+fi
+touch $LOCKFILE
+rm -f $TMPFILE
+
+# for Canon LiDE 210
+scanimage --device-name "$1" --format tiff --mode Color --swdeskew=yes --swcrop=yes \
+    --resolution 150 --contrast 10 --brightness 5 > $TMPFILE
+
+convert $TMPFILE -quality 90 $OUTFILE
+thunderbird -compose "attachment='$OUTFILE'"
+rm -f $LOCKFILE
+

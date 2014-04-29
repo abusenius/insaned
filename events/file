@@ -1,0 +1,9 @@
+#!/bin/sh
+
+# starts GIMP
+# unfortunately, it does not seem to be possible to let gimp show the scan dialog
+
+INSANED_LOGFILE="/tmp/insaned.log"
+
+gimp& &>>$INSANED_LOGFILE
+

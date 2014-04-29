@@ -107,7 +107,8 @@ See also
 
 for more details.
 
-Installation script is currently only provided for gentoo linux.
+Installation script is currently only provided for Gentoo Linux:
+
 1. Add insaned/media-gfx/insaned/insaned-0.0.1.ebuild to your local overlay.
 2. Run ./compress.sh to create backup/insaned-0.0.1.tar.bz2 and copy backup/insaned-0.0.1.tar.bz2 to /usr/portage/distfiles/
 3. cd $YOUR_OVERLAY/media-gfx/insaned

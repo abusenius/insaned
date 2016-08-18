@@ -1,0 +1,14 @@
+Source: insaned
+Section: graphics
+Priority: optional
+Maintainer: Alex Busenius <the_unknown@gmx.net>
+Build-Depends: debhelper (>=9)
+Standards-Version: 3.9.7
+Homepage: https://github.com/abusenius/insaned
+
+Package: insaned
+Architecture: any
+Depends: ${shlibs:Depends}, ${misc:Depends}, libsane (>=1.0.23)
+Description: Simple daemon polling button presses on SANE scanners
+ Insaned polls button presses on SANE scanners and executes user-defined scripts
+ when a button is triggered

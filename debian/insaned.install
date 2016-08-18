@@ -1,0 +1,3 @@
+insaned usr/bin
+systemd/insaned.service lib/systemd/system
+events/* etc/insaned/events

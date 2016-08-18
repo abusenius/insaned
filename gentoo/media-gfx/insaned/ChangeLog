@@ -1,6 +1,12 @@
 # ChangeLog for media-gfx/insaned
-# Copyright 2013-2014 Alex Busenius; Distributed under the GPL v2
+# Copyright 2013-2016 Alex Busenius; Distributed under the GPL v2
 # $Header: $
+
+*insaned-0.0.2 (18 Aug 2016)
+
+  18 Aug 2016; Alex Busenius <the_unknown@gmx.net> +insaned-0.0.2.ebuild,
+     -insaned-0.0.1.ebuild::
+  Log file and PID directory are created by the daemon if needed.
 
 *insaned-0.0.1 (15 Dec 2013)
 

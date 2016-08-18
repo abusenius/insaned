@@ -3,5 +3,5 @@
 #define PACKAGE "insaned"
 
 /* Define to the version of the distribution. */
-#define VERSION "0.0.1"
+#define VERSION "0.0.2"
 

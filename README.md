@@ -107,13 +107,18 @@ See also
 
 for more details.
 
-Installation script is currently only provided for Gentoo Linux:
+*Gentoo Linux:*
 
-1. Add insaned/gentoo/media-gfx/insaned/insaned-0.0.1.ebuild to your local overlay.
-2. Run ./compress.sh to create backup/insaned-0.0.1.tar.bz2 and copy backup/insaned-0.0.1.tar.bz2 to /usr/portage/distfiles/
+1. Add insaned/gentoo/media-gfx/insaned/insaned-0.0.2.ebuild to your local overlay.
+2. Run ./compress.sh to create backup/insaned-0.0.2.tar.bz2 and copy backup/insaned-0.0.2.tar.bz2 to /usr/portage/distfiles/
 3. cd $YOUR_OVERLAY/media-gfx/insaned
-4. ebuild insaned-0.0.1.ebuild manifest
+4. ebuild insaned-0.0.2.ebuild manifest
 5. emerge insaned
+
+*Ubuntu Linux:*
+
+1. Download insaned_0.0.2-0ubuntu1_amd64.deb from releases
+2. sudo dpkg -i insaned_0.0.2-0ubuntu1_amd64.deb
 
 TODO
 ----
@@ -123,7 +128,6 @@ The following features are planned:
 * Suspend polling while one of the configured processes are running
 * Suspend polling while another process is using the SANE library
 * CMake build
-* Installation script
 * Packages for other linux distributions
 * More useful handler scripts
 * Handler script stub for starting a GUI frontend

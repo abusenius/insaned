@@ -1,6 +1,6 @@
 /* insaned -- simple daemon polling button presses using the SANE library
    Heavily based on scanimage utility from SANE distribution
-   Copyright (C) 2013 - 2014 Alex Busenius
+   Copyright (C) 2013 - 2016 Alex Busenius
 
    scanimage -- command line scanning utility
    Uses the SANE library.
@@ -41,6 +41,74 @@
 
 #include "InsaneDaemon.h"
 #include "InsaneException.h"
+
+
+std::string basename(const std::string & path)
+{
+    if (path.empty()) {
+        return "";
+    }
+    auto pos = path.rfind("/");
+    if (pos == std::string::npos) {
+        return "";
+    }
+    return path.substr(0, pos);
+}
+
+
+bool createIfNeeded(const std::string & path, bool isFile)
+{
+    struct stat sb;
+    const mode_t mode = S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH | (isFile ? 0 : S_IXUSR | S_IXGRP | S_IXOTH);
+
+    bool exists = true;
+    if (stat(path.c_str(), &sb) == -1) {
+        if (errno != ENOENT) {
+            syslog(LOG_ERR | LOG_USER, "Stat failed: %s", strerror(errno));
+            return false;
+        }
+        exists = false;
+    }
+
+    if (exists) {
+        if (!isFile && (sb.st_mode & S_IFMT) != S_IFDIR) {
+            syslog(LOG_ERR | LOG_USER, "%s is not a directory", path.c_str());
+            return false;
+        }
+        if (isFile && (sb.st_mode & S_IFMT) != S_IFREG) {
+            syslog(LOG_ERR | LOG_USER, "%s is not a regular file", path.c_str());
+            return false;
+        }
+
+        if (chmod(path.c_str(), mode) == -1) {
+            syslog(LOG_ERR | LOG_USER, "Chmod failed: %s", strerror(errno));
+            return false;
+        }
+
+        return true;
+    }
+
+    if (isFile) {
+        int fd = creat(path.c_str(), mode);
+        if (fd == -1) {
+            syslog(LOG_ERR | LOG_USER, "Creat failed: %s", strerror(errno));
+            return false;
+        }
+        close(fd);
+    } else {
+        if (mkdir(path.c_str(), mode) == -1) {
+            syslog(LOG_ERR | LOG_USER, "Mkdir failed: %s", strerror(errno));
+            return false;
+        }
+    }
+    if (chmod(path.c_str(), mode) == -1) {
+        syslog(LOG_ERR | LOG_USER, "Chmod failed: %s", strerror(errno));
+        return false;
+    }
+
+    return true;
+}
+
 
 int main(int argc, char ** argv)
 {
@@ -213,6 +281,15 @@ int main(int argc, char ** argv)
     }
 
     try {
+        // create and chmod logfile and pid directory
+        if (!createIfNeeded(logfile, true)) {
+            return 1;
+        }
+        if (!pidfile.empty() && !createIfNeeded(basename(pidfile), false)) {
+            return 1;
+        }
+
+        // TODO chown logfile and pid directory
         // TODO su to another UID
         // TODO drop permissions
         if (do_fork) {

@@ -27,10 +27,10 @@ src_install() {
 	dobin insaned || die "install failed"
 
 	exeinto /etc/init.d || die "install failed"
-	doexe init.d/insaned || die "install failed"
+	doexe gentoo/init.d/insaned || die "install failed"
 
 	insinto /etc/conf.d || die "install failed"
-	doins conf.d/insaned || die "install failed"
+	doins gentoo/conf.d/insaned || die "install failed"
 
 	exeinto /etc/insaned/events || die "install failed"
 	doexe events/example || die "install failed"

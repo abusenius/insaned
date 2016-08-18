@@ -99,7 +99,7 @@ To compile insaned, run:
 
 in the project directory. The daemon will be created in the project directory and called "insaned". You can run it in foreground for testing purposes as follows:
 
-    ./insaned --dont-fork --events-dir=$PWD/init.d --log-file=$PWD/log.log -vv
+    ./insaned --dont-fork --events-dir=$PWD/events --log-file=$PWD/log.log -vv
 
 See also
 
@@ -109,7 +109,7 @@ for more details.
 
 Installation script is currently only provided for Gentoo Linux:
 
-1. Add insaned/media-gfx/insaned/insaned-0.0.1.ebuild to your local overlay.
+1. Add insaned/gentoo/media-gfx/insaned/insaned-0.0.1.ebuild to your local overlay.
 2. Run ./compress.sh to create backup/insaned-0.0.1.tar.bz2 and copy backup/insaned-0.0.1.tar.bz2 to /usr/portage/distfiles/
 3. cd $YOUR_OVERLAY/media-gfx/insaned
 4. ebuild insaned-0.0.1.ebuild manifest

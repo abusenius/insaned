@@ -3,6 +3,6 @@
 # starts gwenview if it is not already started
 
 if ! ps aux | /bin/egrep -wq 'gwen[v]iew' ; then
-    gwenview & &>/dev/null
+    gwenview >/dev/null 2>&1 &
 fi
 

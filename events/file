@@ -5,5 +5,5 @@
 
 INSANED_LOGFILE="/tmp/insaned.log"
 
-gimp& &>>$INSANED_LOGFILE
+gimp &>>$INSANED_LOGFILE &
 

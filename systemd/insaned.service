@@ -1,0 +1,14 @@
+[Unit]
+Description=SANE scanner button polling service
+After=saned.service udev.service systemd-modules-load.service
+
+[Service]
+Type=forking
+EnvironmentFile=/etc/default/insaned
+User=root
+Group=root
+Nice=0
+ExecStart=/usr/bin/insaned -p /var/run/insaned/insaned.pid ${INSANED_EXTRAOPTS}
+
+[Install]
+WantedBy=multi-user.target

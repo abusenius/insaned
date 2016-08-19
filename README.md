@@ -4,18 +4,6 @@ Insaned
 Insaned is a simple linux daemon for polling button presses on SANE scanners.
 
 
-BIG FAT WARNING
----------------
-
-Although insaned seems to work wery well for me, it is currently IN BETA VERSION.
-
-I am not responsible for any physical or mental damage it might cause to you, your hardware or your pet. Use it on your own risk.
-
-YOU'VE BEEN WARNED
-
-That said, any help is welcomed. Feel free to contact me if you have any comments/suggestions/patches. Especially interesting are reports if it works with another scanners. Please make sure to include the output of "insaned -L" to your report, and, if you have any problems, also the output of "scanimage -A".
-
-
 Description
 -----------
 
@@ -87,7 +75,7 @@ Dependencies
 ------------
 
 * SANE library version 1.0.23 or later (tested with: 1.0.24)
-* Recent GCC with support for C++11 standard (tested with: 4.8.2)
+* Recent GCC with support for C++11 standard (tested with: 4.8.2, 5.4.0)
 
 
 Installation
@@ -107,18 +95,28 @@ See also
 
 for more details.
 
-*Gentoo Linux:*
+*Gentoo Linux*
 
-1. Add insaned/gentoo/media-gfx/insaned/insaned-0.0.2.ebuild to your local overlay.
-2. Run ./compress.sh to create backup/insaned-0.0.2.tar.bz2 and copy backup/insaned-0.0.2.tar.bz2 to /usr/portage/distfiles/
+1. Add
+   [media-gfx/insaned/insaned-0.0.2.ebuild](https://raw.githubusercontent.com/abusenius/insaned/master/media-gfx/insaned/insaned-0.0.2.ebuild) to your local overlay.
+2. Download [insaned-0.0.2.tar.bz2](https://github.com/abusenius/insaned/archive/insaned-0.0.2.tar.bz2) to /usr/portage/distfiles/
 3. cd $YOUR_OVERLAY/media-gfx/insaned
 4. ebuild insaned-0.0.2.ebuild manifest
 5. emerge insaned
 
-*Ubuntu Linux:*
+*Ubuntu Linux (64 bit)*
 
-1. Download insaned_0.0.2-0ubuntu1_amd64.deb from releases
+1. Download [insaned_0.0.2-0ubuntu1_amd64.deb](https://github.com/abusenius/insaned/archive/insaned_0.0.2-0ubuntu1_amd64.deb)
 2. sudo dpkg -i insaned_0.0.2-0ubuntu1_amd64.deb
+
+
+Side note
+---------
+
+I am not responsible for any physical or mental damage insaned might cause to you, your hardware or your pet. Use it on your own risk.
+
+That said, any help is welcomed. Feel free to contact me if you have any comments/suggestions/patches. Especially interesting are reports if it works with another scanners. Please make sure to include the output of "insaned -L" to your report, and, if you have any problems, also the output of "scanimage -A".
+
 
 TODO
 ----

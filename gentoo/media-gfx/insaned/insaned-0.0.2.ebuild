@@ -7,17 +7,13 @@ EAPI=5
 inherit eutils
 
 DESCRIPTION="A simple daemon polling button presses on SANE scanners"
-HOMEPAGE="http://foo.bar.com/insaned/"	# TODO
-SRC_URI="ftp://foo.bar.com/files/${PF}.tar.bz2"	# TODO
+HOMEPAGE="https://github.com/abusenius/insaned/"
+SRC_URI="https://github.com/abusenius/insaned/archive/${PF}.tar.bz2"
 
 LICENSE="GPL-2"
 SLOT="0"
 KEYWORDS="~x86 ~amd64"
 IUSE=""
-
-# Do not fetch neither from SRC_URI nor Gentoo mirrors, since the file isn't
-# there at the moment
-RESTRICT="mirror fetch"
 
 RDEPEND=">=media-gfx/sane-backends-1.0.23"
 

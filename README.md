@@ -98,11 +98,10 @@ for more details.
 *Gentoo Linux*
 
 1. Add
-   [media-gfx/insaned/insaned-0.0.2.ebuild](https://raw.githubusercontent.com/abusenius/insaned/master/media-gfx/insaned/insaned-0.0.2.ebuild) to your local overlay.
-2. Download [insaned-0.0.2.tar.bz2](https://github.com/abusenius/insaned/releases/download/v0.0.2/insaned-0.0.2.tar.bz2) to /usr/portage/distfiles/
-3. cd $YOUR_OVERLAY/media-gfx/insaned
-4. ebuild insaned-0.0.2.ebuild manifest
-5. emerge insaned
+   [media-gfx/insaned/insaned-0.0.2.ebuild](https://raw.githubusercontent.com/abusenius/insaned/master/gentoo/media-gfx/insaned/insaned-0.0.2.ebuild) to media-gfx/insaned in your local overlay.
+2. cd $YOUR_OVERLAY/media-gfx/insaned
+3. ebuild insaned-0.0.2.ebuild manifest
+4. emerge insaned
 
 *Ubuntu Linux (64 bit)*
 

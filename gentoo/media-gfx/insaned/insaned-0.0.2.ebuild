@@ -8,7 +8,7 @@ inherit eutils
 
 DESCRIPTION="A simple daemon polling button presses on SANE scanners"
 HOMEPAGE="https://github.com/abusenius/insaned/"
-SRC_URI="https://github.com/abusenius/insaned/archive/${PF}.tar.bz2"
+SRC_URI="https://github.com/abusenius/insaned/releases/download/v${PV}/${PF}.tar.bz2"
 
 LICENSE="GPL-2"
 SLOT="0"

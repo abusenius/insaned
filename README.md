@@ -13,7 +13,9 @@ It should work with all backends that expose buttons as "Sensors". The daemon re
 
 Currently, insaned was tested on:
 * Gentoo Linux with sane-backends-1.0.24 and a Canon LiDE 210 flatbed scanner (genesys backend, USB ID 04a9:190a)
-* Raspberry Pi with HP Scanjet 2400c (thanks to GaryA)
+* Ubuntu 16.04.1 LTS with Canon LiDE 210
+* Raspberry Pi with HP Scanjet 2400c (thanks to [GaryA](https://github.com/GaryA))
+* Debian 8 running on a [CHIP](https://getchip.com/pages/chip) with Canon Lide 210 (thanks to [Coaxial](https://github.com/Coaxial))
 
 
 Why

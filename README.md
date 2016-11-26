@@ -124,6 +124,7 @@ TODO
 
 The following features are planned:
 
+* Package for raspbian
 * Suspend polling while one of the configured processes are running
 * Suspend polling while another process is using the SANE library
 * CMake build

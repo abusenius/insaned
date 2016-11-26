@@ -1,8 +1,34 @@
 #!/bin/sh
 
-# starts gwenview if it is not already started
+# this event is tuned for Canon LiDE 210
+#
+# stops scanning of a multipage PDF document and cleans up lock files
+#
+# see also 'file' event
 
-if ! ps aux | /bin/egrep -wq 'gwen[v]iew' ; then
-    gwenview >/dev/null 2>&1 &
+# internal variables, don't change
+TMPFILE_PAGE="/tmp/multipage-scan-page.tiff"
+TMPFILE_ALL="/tmp/multipage-scan-all.tiff"
+LOCKFILE="/tmp/insaned-scan.lock"
+INSANED_LOGFILE="/tmp/insaned.log"
+MULTIPAGE_LOCK="/tmp/insaned-multipage.lock"
+
+
+# lock file is needed to avoid collisions with other events
+if [ -f "$LOCKFILE" ]; then
+    echo "Error: Another scanning operation is currently in progress" >> "$INSANED_LOGFILE"
+    exit 0
 fi
+touch "$LOCKFILE"
+
+
+if [ -f "$MULTIPAGE_LOCK" ]; then
+    echo "finished scanning multipage document: $(head -1 "$MULTIPAGE_LOCK")" >> "$INSANED_LOGFILE"
+    rm -f "$MULTIPAGE_LOCK" 2>&1 >> "$INSANED_LOGFILE"
+    rm -f "$TMPFILE_PAGE" "$TMPFILE_ALL" 2>&1 >> "$INSANED_LOGFILE"
+fi
+
+
+# remove lock file
+rm -f "$LOCKFILE"
 

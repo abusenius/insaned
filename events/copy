@@ -4,7 +4,7 @@
 # scanimage options are tuned for Canon LiDE 210
 
 TMPFILE="/tmp/scan.tiff"
-LOCKFILE="/tmp/copy.lock"
+LOCKFILE="/tmp/insaned-scan.lock"
 INSANED_LOGFILE="/tmp/insaned.log"
 
 # shamelessly stolen from scanbuttond and modified for Canon LiDE 210 and Canon Pixma IP4000
@@ -15,17 +15,18 @@ INSANED_LOGFILE="/tmp/insaned.log"
 # ISO A4 paper size so that the scanned document matches the printer
 # output as closely as possible.
 
-if [ -f $LOCKFILE ]; then
-    echo "Error: Another scanning operation is currently in progress" >> $INSANED_LOGFILE
+if [ -f "$LOCKFILE" ]; then
+    echo "Error: Another scanning operation is currently in progress" >> "$INSANED_LOGFILE"
     exit 0
 fi
-touch $LOCKFILE
-rm -f $TMPFILE
+touch "$LOCKFILE"
+rm -f "$TMPFILE"
 
 # for Canon LiDE 210
 scanimage --device-name "$1" --format tiff --mode Gray \
-    -l 2 -t 0 -x 206 -y 293 --resolution 300 --contrast 18 --brightness 4 --swdespeck=yes --despeck 3 > $TMPFILE
+    -l 2 -t 0 -x 206 -y 293 --resolution 300 --contrast 18 --brightness 4 --swdespeck=yes --despeck 3 > "$TMPFILE"
 
-tiff2ps -c -w 8.11 -h 11.54 $TMPFILE | lpr &
-rm -f $LOCKFILE
+tiff2ps -c -w 8.11 -h 11.54 "$TMPFILE" | lpr &
+
+rm -f "$LOCKFILE"
 

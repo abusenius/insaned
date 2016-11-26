@@ -1,9 +1,97 @@
 #!/bin/sh
 
-# starts GIMP
-# unfortunately, it does not seem to be possible to let gimp show the scan dialog
+# this event is tuned for Canon LiDE 210
+#
+# scans into a (multipage) PDF document:
+# - on first 'file' button press, creates a 1-page PDF document
+# - on each following 'file' button press, adds next page to the PDF document
+# - scanning of the current PDF document stops after pressing 'extra' button or 10 minutes after the last # page was scanned
+# - scanning of a multipage PDF document is not aborted if other buttons are pressed between pages # (e.g. copy)
+#
+# default settings: color image, 300 dpi, size A4, automatically deskew and despeckle
+# NOTE: these settings require 25 MB of disk space in /tmp per page
+#
+# dependencies:
+# libtiff-tools (tiff2pdf, tiffcp)
 
+# contrast and despeckle removes noise in mostly white documents and result in much smaller PDF size
+SCAN_SETTINGS="--mode color -x 210 -y 297 --contrast 18 --brightness 6 --swdeskew=yes --swcrop=no --swdespeck=yes --despeck 2 --resolution 300"
+
+# JPEG compression (-j) with quality (-q) 85 produces good quality at acceptable size, too small quality values can produce artefacts
+PDF_SETTINGS="-p A4 -j -q 85"
+
+# output file settings
+PDF_TITLE="Scan $(date '+%Y-%m-%d %H:%M:%S')"
+OUTFILE="$HOME/scan-$(date '+%Y-%m-%d_%H-%M-%S').pdf"
+
+# during timeout (in seconds) after the last page was scanned, next scan will append another page
+# after the timeout, button 'file' will create a new PDF document even if button 'extra' was not pressed
+TIMEOUT="600"
+
+
+# internal variables, don't change
+TMPFILE_PAGE="/tmp/multipage-scan-page.tiff"
+TMPFILE_ALL="/tmp/multipage-scan-all.tiff"
+LOCKFILE="/tmp/insaned-scan.lock"
 INSANED_LOGFILE="/tmp/insaned.log"
+DEVICE="$1"
 
-gimp &>>$INSANED_LOGFILE &
+# first line of MULTIPAGE_LOCK file contains file name of the current document
+# last line of MULTIPAGE_LOCK file contains UNIX timestamp when the last scan was finished
+# the number of lines in MULTIPAGE_LOCK is the number of scanned pages - 1
+MULTIPAGE_LOCK="/tmp/insaned-multipage.lock"
+
+
+# scans one page and appends it to the multipage TIFF file
+# param 1: PDF output file
+scanNextPage() {
+    scanimage --device-name "$DEVICE" --format tiff $SCAN_SETTINGS > "$TMPFILE_PAGE"
+    tiffcp -a "$TMPFILE_PAGE" "$TMPFILE_ALL" 2>&1 >> "$INSANED_LOGFILE"
+    tiff2pdf $PDF_SETTINGS -t "$PDF_TITLE" -F -o "$1" "$TMPFILE_ALL" 2>&1 >> "$INSANED_LOGFILE"
+}
+
+
+# lock file is needed to avoid collisions with other events
+if [ -f "$LOCKFILE" ]; then
+    echo "Error: Another scanning operation is currently in progress" >> "$INSANED_LOGFILE"
+    exit 0
+fi
+touch "$LOCKFILE"
+
+
+# if the MULTIPAGE_LOCK file exists: check for timeout
+if [ -f "$MULTIPAGE_LOCK" ]; then
+    TIME_PASSED=$(expr $(date '+%s') - $(tail -1 "$MULTIPAGE_LOCK"))
+    if test "$TIME_PASSED" -gt "$TIMEOUT"; then
+        echo "finished scanning multipage document on timeout: $(head -1 "$MULTIPAGE_LOCK")" >> "$INSANED_LOGFILE"
+        rm -f "$MULTIPAGE_LOCK" 2>&1 >> "$INSANED_LOGFILE"
+    fi
+fi
+
+if [ ! -f "$MULTIPAGE_LOCK" ]; then
+    # first press: no MULTIPAGE_LOCK file exists yet
+
+    # create multipage lock
+    echo "$OUTFILE" > "$MULTIPAGE_LOCK"
+    echo "started scanning multipage document: $OUTFILE" >> "$INSANED_LOGFILE"
+
+    # clean up previous pages
+    rm -f "$TMPFILE_PAGE" "$TMPFILE_ALL" 2>&1 >> "$INSANED_LOGFILE"
+else
+    # consequent press: MULTIPAGE_LOCK file exist
+
+    # get the correct file name
+    OUTFILE="$(head -1 "$MULTIPAGE_LOCK")"
+    echo "scanning next page of multipage document: $OUTFILE" >> "$INSANED_LOGFILE"
+fi
+
+# scan
+scanNextPage "$OUTFILE"
+
+# add timestamp to the MULTIPAGE_LOCK file
+date '+%s' >> "$MULTIPAGE_LOCK"
+
+
+# remove lock file
+rm -f "$LOCKFILE"
 

@@ -10,6 +10,7 @@ Group=root
 Nice=0
 ExecStart=/usr/bin/insaned -p /var/run/insaned/insaned.pid ${INSANED_EXTRAOPTS}
 PIDFile=/var/run/insaned/insaned.pid
+Restart=on-failure
 
 [Install]
 WantedBy=multi-user.target

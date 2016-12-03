@@ -36,15 +36,20 @@ LOCKFILE="/tmp/insaned-scan.lock"
 
 # each event script should start with such check
 # it ensures that only one event script is executed at time, so that they do not disturb each other
-# make sure to remove the lock file at the end of script
 if [ -f "$LOCKFILE" ]; then
   echo "Error: Another scanning operation is currently in progress"
   exit 0
 fi
+# this makes sure the lock file is removed at the end of script
+finish() {
+    rm -f "$LOCKFILE" >/dev/null 2>&1
+}
+trap finish EXIT
 touch "$LOCKFILE"
 
+
 # always clean up stale temporary files at the beginning of the script
-rm -f "$TMPFILE"
+rm -f "$TMPFILE" >/dev/null 2>&1
 
 # 
 # put your custom content here
@@ -74,7 +79,4 @@ rm -f "$TMPFILE"
 #     gwenview >/dev/null 2>&1 &
 # fi
 
-
-# each event script should end with removing the lock file
-rm -f "$LOCKFILE"
 

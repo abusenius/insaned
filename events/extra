@@ -19,6 +19,11 @@ if [ -f "$LOCKFILE" ]; then
     echo "Error: Another scanning operation is currently in progress" >> "$INSANED_LOGFILE"
     exit 0
 fi
+# cleanup on exit
+finish() {
+    rm -f "$LOCKFILE" >/dev/null 2>&1
+}
+trap finish EXIT
 touch "$LOCKFILE"
 
 
@@ -29,7 +34,4 @@ if [ -f "$MULTIPAGE_LOCK" ]; then
     rm -f "$TMPFILE_PAGE" "$TMPFILE_ALL" >> "$INSANED_LOGFILE" 2>&1
 fi
 
-
-# remove lock file
-rm -f "$LOCKFILE"
 

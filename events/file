@@ -57,6 +57,11 @@ if [ -f "$LOCKFILE" ]; then
     echo "Error: Another scanning operation is currently in progress" >> "$INSANED_LOGFILE"
     exit 0
 fi
+# cleanup on exit
+finish() {
+    rm -f "$LOCKFILE" >/dev/null 2>&1
+}
+trap finish EXIT
 touch "$LOCKFILE"
 
 
@@ -91,8 +96,4 @@ scanNextPage "$OUTFILE"
 
 # add timestamp to the MULTIPAGE_LOCK file
 date '+%s' >> "$MULTIPAGE_LOCK"
-
-
-# remove lock file
-rm -f "$LOCKFILE"
 

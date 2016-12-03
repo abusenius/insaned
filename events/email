@@ -13,15 +13,20 @@ if [ -f "$LOCKFILE" ]; then
     echo "Error: Another scanning operation is currently in progress" >> "$INSANED_LOGFILE"
     exit 0
 fi
+# cleanup on exit
+finish() {
+    rm -f "$LOCKFILE" >/dev/null 2>&1
+}
+trap finish EXIT
 touch "$LOCKFILE"
-rm -f "$TMPFILE"
+
+
+rm -f "$TMPFILE" >/dev/null 2>&1
 
 # for Canon LiDE 210
 scanimage --device-name "$1" --format tiff --mode Color --swdeskew=yes --swcrop=yes \
     --resolution 150 --contrast 10 --brightness 5 > "$TMPFILE"
 
-convert "$TMPFILE" -quality 90 "$OUTFILE"
+convert "$TMPFILE" -quality 90 "$OUTFILE" >> "$INSANED_LOGFILE" 2>&1
 thunderbird -compose "attachment='$OUTFILE'"
-
-rm -f "$LOCKFILE"
 

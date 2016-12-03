@@ -22,10 +22,11 @@ fi
 touch "$LOCKFILE"
 
 
+# shellcheck disable=SC2129
 if [ -f "$MULTIPAGE_LOCK" ]; then
     echo "finished scanning multipage document: $(head -1 "$MULTIPAGE_LOCK")" >> "$INSANED_LOGFILE"
-    rm -f "$MULTIPAGE_LOCK" 2>&1 >> "$INSANED_LOGFILE"
-    rm -f "$TMPFILE_PAGE" "$TMPFILE_ALL" 2>&1 >> "$INSANED_LOGFILE"
+    rm -f "$MULTIPAGE_LOCK" >> "$INSANED_LOGFILE" 2>&1
+    rm -f "$TMPFILE_PAGE" "$TMPFILE_ALL" >> "$INSANED_LOGFILE" 2>&1
 fi
 
 

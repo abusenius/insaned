@@ -44,10 +44,11 @@ MULTIPAGE_LOCK="/tmp/insaned-multipage.lock"
 
 # scans one page and appends it to the multipage TIFF file
 # param 1: PDF output file
+# shellcheck disable=SC2086
 scanNextPage() {
     scanimage --device-name "$DEVICE" --format tiff $SCAN_SETTINGS > "$TMPFILE_PAGE"
-    tiffcp -a "$TMPFILE_PAGE" "$TMPFILE_ALL" 2>&1 >> "$INSANED_LOGFILE"
-    tiff2pdf $PDF_SETTINGS -t "$PDF_TITLE" -F -o "$1" "$TMPFILE_ALL" 2>&1 >> "$INSANED_LOGFILE"
+    tiffcp -a "$TMPFILE_PAGE" "$TMPFILE_ALL" >> "$INSANED_LOGFILE" 2>&1
+    tiff2pdf $PDF_SETTINGS -t "$PDF_TITLE" -F -o "$1" "$TMPFILE_ALL" >> "$INSANED_LOGFILE" 2>&1
 }
 
 
@@ -61,10 +62,10 @@ touch "$LOCKFILE"
 
 # if the MULTIPAGE_LOCK file exists: check for timeout
 if [ -f "$MULTIPAGE_LOCK" ]; then
-    TIME_PASSED=$(expr $(date '+%s') - $(tail -1 "$MULTIPAGE_LOCK"))
+    TIME_PASSED=$(($(date '+%s') - $(tail -1 "$MULTIPAGE_LOCK")))
     if test "$TIME_PASSED" -gt "$TIMEOUT"; then
         echo "finished scanning multipage document on timeout: $(head -1 "$MULTIPAGE_LOCK")" >> "$INSANED_LOGFILE"
-        rm -f "$MULTIPAGE_LOCK" 2>&1 >> "$INSANED_LOGFILE"
+        rm -f "$MULTIPAGE_LOCK" >> "$INSANED_LOGFILE" 2>&1
     fi
 fi
 
@@ -76,7 +77,7 @@ if [ ! -f "$MULTIPAGE_LOCK" ]; then
     echo "started scanning multipage document: $OUTFILE" >> "$INSANED_LOGFILE"
 
     # clean up previous pages
-    rm -f "$TMPFILE_PAGE" "$TMPFILE_ALL" 2>&1 >> "$INSANED_LOGFILE"
+    rm -f "$TMPFILE_PAGE" "$TMPFILE_ALL" >> "$INSANED_LOGFILE" 2>&1
 else
     # consequent press: MULTIPAGE_LOCK file exist
 

@@ -8,7 +8,7 @@ addons:
       - shellcheck
 
 script:
-  - shellcheck -x *.sh events/*
+  - shellcheck -s sh -x ./*.sh events/*
 
 notifications:
 email: false

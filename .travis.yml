@@ -1,0 +1,14 @@
+language: sh
+
+addons:
+  apt:
+    sources:
+      - debian-sid
+    packages:
+      - shellcheck
+
+script:
+  - shellcheck -x *.sh events/*
+
+notifications:
+email: false

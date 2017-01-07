@@ -38,8 +38,8 @@ before_install:
   - sudo apt-get update -qq
 
 script:
-  - [[ $BUILDTYPE == "shellcheck" ]] && shellcheck -s sh -x ./*.sh events/*
-  - [[ $BUILDTYPE == "coverity" ]] && make -j2
+  - if [[ $BUILDTYPE == "shellcheck" ]]; then shellcheck -s sh -x ./*.sh events/* ; fi
+  - if [[ $BUILDTYPE == "coverity" ]]; then make -j2 ; fi
 
 notifications:
   email: false

@@ -20,7 +20,6 @@ addons:
     branch_pattern: master
   apt:
     sources:
-      - debian-sid
       - ubuntu-toolchain-r-test
     packages:
       - shellcheck
@@ -30,6 +29,7 @@ before_install:
   - sudo apt-get update -qq
 
 script:
+  - shellcheck -V
   - shellcheck -s sh -x ./*.sh events/*
   - make -j2
 

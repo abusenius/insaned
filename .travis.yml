@@ -1,3 +1,5 @@
+sudo: required
+dist: precise
 language: cpp
 compiler:
   - gcc
@@ -23,6 +25,9 @@ addons:
     packages:
       - shellcheck
       - g++-5
+
+before_install:
+  - sudo apt-get update -qq
 
 script:
   - shellcheck -s sh -x ./*.sh events/*

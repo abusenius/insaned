@@ -24,6 +24,7 @@ matrix:
             - ubuntu-toolchain-r-test
           packages:
             - g++-5
+            - libsane-dev
       env: BUILDTYPE=coverity
     - compiler: gcc
       addons:

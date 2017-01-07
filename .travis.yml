@@ -1,6 +1,21 @@
-language: sh
+language: cpp
+compiler:
+  - gcc
+
+env:
+  global:
+   # The next declaration is the encrypted COVERITY_SCAN_TOKEN, created
+   #   via the "travis encrypt" command using the project repo's public key
+   - secure: "CRiD1kSYBekCVWqkx5j0gceCm09pB8s+Hq+1/Uxho4EQNcloScG2I/EZ4LCUYV8bgowp5d6+JIIR6dPIfqXpm6XcwRmoZqUbih/acG9kVNH6/+IKeKdCbWqnjZICqR0v7OSv4Mjb7zOMBkaD2hsNwZ23qEyNlRkjo7kqQRYF+64LHkpXmYw9bbfTO/GD9RT6WmfcliDOwtjOt08uusHPGVTMAjCzw4ZtUSNIoyYgLkfnD3RS6rDT1+qdYVA0CYYLrtWTSR9H2duE/04727PlqS7xwE88U2nxwchlXNaKDXKJ4k3NXq8wmzoD8cgiJ6CbuW73KI4gyEWnbKKxlZQBnH149+MSfuMGf6DByBBrRJ1AUVfsi8vyBt6IxOnlvrvlFxDClivBVXyOM9Ewc8kGeIUcw0ol5AU3Z5RM1JJ5nlZNcnuVo5IKYpcRDZLwujNrhe7BNw74vNPpizvtQ+gp4DcsAAeQ57ceGHtlRzBUMdwytP+AEDuEwTyZafeSmWDbZwfdEt2NadoNSCc17hGrCpq0rmggIt5zENQwqkOkxzs6AqqOToCpCnROOXypHjARe11dFoDcXOYY79AkB7B+RVUH2ALGu2qdCYczG/72TZ7BggcjnQGdTC4/7BtFG8ZZsErMll+/eaX7Inoxxcw6fN5k6QcaP6zpwYRxCD9mk0U="
 
 addons:
+  coverity_scan:
+    project:
+      name: "abusenius/insaned"
+      description: "Build submitted via Travis CI"
+    build_command_prepend: "make clean"
+    build_command: "make -j2"
+    branch_pattern: master
   apt:
     sources:
       - debian-sid
@@ -9,6 +24,8 @@ addons:
 
 script:
   - shellcheck -s sh -x ./*.sh events/*
+  - make -j2
 
 notifications:
-email: false
+  email: false
+

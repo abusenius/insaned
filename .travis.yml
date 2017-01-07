@@ -16,6 +16,7 @@ matrix:
           project:
             name: "abusenius/insaned"
             description: "Build submitted via Travis CI"
+          notification_email: abusenius@users.noreply.github.com
           build_command_prepend: "make clean"
           build_command: "CXX=g++-5 make -j2"
           branch_pattern: master

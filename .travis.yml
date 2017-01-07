@@ -18,7 +18,7 @@ matrix:
             description: "Build submitted via Travis CI"
           notification_email: abusenius@users.noreply.github.com
           build_command_prepend: "make clean"
-          build_command: "CXX=g++-5 make -j2"
+          build_command: "make CXX=g++-5 -j2"
           branch_pattern: master
         apt:
           sources:
@@ -41,7 +41,7 @@ before_install:
 
 script:
   - if [[ $BUILDTYPE == "shellcheck" ]]; then shellcheck -s sh -x ./*.sh events/* ; fi
-  - if [[ $BUILDTYPE == "coverity" ]]; then CXX=g++-5 make -j2 ; fi
+  - if [[ $BUILDTYPE == "coverity" ]]; then make CXX=g++-5 -j2 ; fi
 
 notifications:
   email: false

@@ -3,6 +3,7 @@ Insaned
 
 Insaned is a simple linux daemon for polling button presses on SANE scanners.
 
+[![Build Status](https://travis-ci.org/abusenius/insaned.svg?branch=master)](https://travis-ci.org/abusenius/insaned)
 
 Description
 -----------

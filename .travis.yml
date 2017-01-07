@@ -17,7 +17,7 @@ matrix:
             name: "abusenius/insaned"
             description: "Build submitted via Travis CI"
           build_command_prepend: "make clean"
-          build_command: "make -j2"
+          build_command: "CXX=g++-5 make -j2"
           branch_pattern: master
         apt:
           sources:
@@ -39,7 +39,7 @@ before_install:
 
 script:
   - if [[ $BUILDTYPE == "shellcheck" ]]; then shellcheck -s sh -x ./*.sh events/* ; fi
-  - if [[ $BUILDTYPE == "coverity" ]]; then make -j2 ; fi
+  - if [[ $BUILDTYPE == "coverity" ]]; then CXX=g++-5 make -j2 ; fi
 
 notifications:
   email: false

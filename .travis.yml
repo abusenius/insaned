@@ -17,7 +17,7 @@ matrix:
             name: "abusenius/insaned"
             description: "Build submitted via Travis CI"
           notification_email: abusenius@users.noreply.github.com
-          build_command_prepend: "make clean"
+          build_command_prepend: "make clean; cov-configure -co g++-5 -- -std=c++11"
           build_command: "make CXX=g++-5 -j2"
           branch_pattern: master
         apt:

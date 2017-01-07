@@ -19,8 +19,10 @@ addons:
   apt:
     sources:
       - debian-sid
+      - ubuntu-toolchain-r-test
     packages:
       - shellcheck
+      - g++-5
 
 script:
   - shellcheck -s sh -x ./*.sh events/*

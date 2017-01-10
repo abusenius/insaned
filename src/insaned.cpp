@@ -270,8 +270,8 @@ int main(int argc, char ** argv)
             }
             return 0;
         }
-    } catch (InsaneException & e) {
-        std::cerr << "\n" << InsaneDaemon::NAME << ": " << e.what() << std::endl;
+    } catch (std::exception & e) {
+        std::cerr << InsaneDaemon::NAME << ": " << e.what() << std::endl;
         return 1;
     }
 
@@ -371,12 +371,9 @@ int main(int argc, char ** argv)
         }
 
         return 0;
-    } catch (InsaneException & e) {
-        syslog(LOG_ERR | LOG_USER, "Exception: %s", e.what());
-        std::cerr << "\n" << InsaneDaemon::NAME << ": Exception: " << e.what() << std::endl;
     } catch (std::exception & e) {
         syslog(LOG_ERR | LOG_USER, "Exception: %s", e.what());
-        std::cerr << "Exception: " << e.what() << std::endl;
+        std::cerr << "\n" << InsaneDaemon::NAME << ": Exception: " << e.what() << std::endl;
     }
 
     return 1;

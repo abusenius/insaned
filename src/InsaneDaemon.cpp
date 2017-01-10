@@ -36,7 +36,7 @@ InsaneDaemon::InsaneDaemon()
     log("Initializing...", 1);
     Timer t;
     if (!checkStatus(sane_init(&mVersionCode, nullptr), "sane_init")) {
-        throw InsaneException("Failed to initialize SANE library");
+        log("error, failed to initialize SANE library!", 0);
     }
     log("timer: sane_init: " + std::to_string(t.restart()) + " ms", 2);
 

@@ -35,7 +35,9 @@ InsaneDaemon::InsaneDaemon()
 {
     log("Initializing...", 1);
     Timer t;
-    checkStatus(sane_init(&mVersionCode, nullptr), "sane_init");
+    if (!checkStatus(sane_init(&mVersionCode, nullptr), "sane_init")) {
+        throw InsaneException("Failed to initialize SANE library");
+    }
     log("timer: sane_init: " + std::to_string(t.restart()) + " ms", 2);
 
 #ifdef SIGHUP
@@ -69,7 +71,7 @@ InsaneDaemon::~InsaneDaemon() noexcept
 }
 
 
-void InsaneDaemon::init(std::string device_name, std::string events_dir, int sleep_ms, int verbose, bool log_to_syslog, bool suspend_after_event) noexcept
+void InsaneDaemon::init(std::string device_name, std::string events_dir, int sleep_ms, int verbose, bool log_to_syslog, bool suspend_after_event)
 {
     mCurrentDevice = device_name;
     mEventsDir = events_dir;

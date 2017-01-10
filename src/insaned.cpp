@@ -219,65 +219,60 @@ int main(int argc, char ** argv)
         }
     }
 
-    daemon.init(devname, events_dir, sleep_ms, verbose, do_fork && !(help || list), suspend);
+    try {
+        daemon.init(devname, events_dir, sleep_ms, verbose, do_fork && !(help || list), suspend);
 
-    /* print help and device list */
-    if (help) {
-        std::cout << "Usage: " << prog_name << " [OPTIONS]...\n"
-            << "\n"
-            << "Start polling sensors of a scanner device and run the corresponding callback\n"
-            << "script when a button is pressed.\n"
-            << "\n"
-            << "Parameters are separated by a blank from single-character options (e.g.\n"
-            << "-d epson) and by a \"=\" from multi-character options (e.g. --device-name=epson).\n"
-            << " -d, --device-name=DEVICE   use the given scanner device instead of the first\n"
-            << "                            available device\n"
-            << " -f, --log-file=FILE        use the given log file instead of default\n"
-            << "                            (" << LOGFILE << ")\n"
-            << " -e, --events-dir=DIR       execute event scripts from the given directory\n"
-            << "                            instead of the default (" << EVENTS_DIR << ")\n"
-            << " -s, --sleep-ms=NUMBER      sleep for the given amount of ms between polling the\n"
-            << "                            sensors instead of default (" << SLEEP_MS << " ms), must be in\n"
-            << "                            range " << SLEEP_MIN << ".." << SLEEP_MAX << "\n"
-            << " -n, --dont-fork            do not fork into background\n"
-            << " -L, --list-sensors         list sensors that will be monitored along with their\n"
-            << "                            current state and exit. See also --device-name\n"
-            << " -w, --suspend-after-event  suspend sensor polling for 15 seconds after an event\n"
-            << "                            handler script was triggered. Use this if insaned\n"
-            << "                            tends to interfere with your handlers.\n"
-            << " -p, --pid-file=FILE        if this option is present, the daemon will create\n"
-            << "                            this file and write its PID into it after fork\n"
-            << " -v, --verbose              give even more status messages\n"
-            << " -h, --help                 display this help message and exit\n"
-            << " -V, --version              print version information and exit" << std::endl;
+        /* print help and device list */
+        if (help) {
+            std::cout << "Usage: " << prog_name << " [OPTIONS]...\n"
+                << "\n"
+                << "Start polling sensors of a scanner device and run the corresponding callback\n"
+                << "script when a button is pressed.\n"
+                << "\n"
+                << "Parameters are separated by a blank from single-character options (e.g.\n"
+                << "-d epson) and by a \"=\" from multi-character options (e.g. --device-name=epson).\n"
+                << " -d, --device-name=DEVICE   use the given scanner device instead of the first\n"
+                << "                            available device\n"
+                << " -f, --log-file=FILE        use the given log file instead of default\n"
+                << "                            (" << LOGFILE << ")\n"
+                << " -e, --events-dir=DIR       execute event scripts from the given directory\n"
+                << "                            instead of the default (" << EVENTS_DIR << ")\n"
+                << " -s, --sleep-ms=NUMBER      sleep for the given amount of ms between polling the\n"
+                << "                            sensors instead of default (" << SLEEP_MS << " ms), must be in\n"
+                << "                            range " << SLEEP_MIN << ".." << SLEEP_MAX << "\n"
+                << " -n, --dont-fork            do not fork into background\n"
+                << " -L, --list-sensors         list sensors that will be monitored along with their\n"
+                << "                            current state and exit. See also --device-name\n"
+                << " -w, --suspend-after-event  suspend sensor polling for 15 seconds after an event\n"
+                << "                            handler script was triggered. Use this if insaned\n"
+                << "                            tends to interfere with your handlers.\n"
+                << " -p, --pid-file=FILE        if this option is present, the daemon will create\n"
+                << "                            this file and write its PID into it after fork\n"
+                << " -v, --verbose              give even more status messages\n"
+                << " -h, --help                 display this help message and exit\n"
+                << " -V, --version              print version information and exit" << std::endl;
 
-        std::cout << "\nList of available devices:\n";
-        try {
+            std::cout << "\nList of available devices:\n";
             for (auto & device : daemon.get_devices()) {
                 std::cout << "    " << device << std::endl;
             }
-        } catch (InsaneException & e) {
-            std::cerr << "\n" << InsaneDaemon::NAME << ": " << e.what() << std::endl;
-            return 1;
+            if (!list) {
+                return 0;
+            }
+            std::cout << std::endl;
         }
-        if (!list) {
-            return 0;
-        }
-        std::cout << std::endl;
-    }
 
-    if (list) {
-        try {
+        if (list) {
             auto sensors = daemon.get_sensors(); // updates current device if it was not set
             std::cout << "List of sensors for device '" << daemon.current_device() << "':" << std::endl;
             for (auto & pair : sensors) {
                 std::cout << "    " << pair.first << "\t" << (pair.second ? "[yes]" : "[no]") << std::endl;
             }
-        } catch (InsaneException & e) {
-            std::cerr << "\n" << InsaneDaemon::NAME << ": " << e.what() << std::endl;
-            return 1;
+            return 0;
         }
-        return 0;
+    } catch (InsaneException & e) {
+        std::cerr << "\n" << InsaneDaemon::NAME << ": " << e.what() << std::endl;
+        return 1;
     }
 
     try {

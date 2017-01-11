@@ -61,46 +61,39 @@ bool createIfNeeded(const std::string & path, bool isFile)
     struct stat sb;
     const mode_t mode = S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH | (isFile ? 0 : S_IXUSR | S_IXGRP | S_IXOTH);
 
-    bool exists = true;
-    if (stat(path.c_str(), &sb) == -1) {
-        if (errno != ENOENT) {
-            syslog(LOG_ERR | LOG_USER, "Stat failed: %s", strerror(errno));
-            return false;
-        }
-        exists = false;
-    }
-
-    if (exists) {
-        if (!isFile && (sb.st_mode & S_IFMT) != S_IFDIR) {
-            syslog(LOG_ERR | LOG_USER, "%s is not a directory", path.c_str());
-            return false;
-        }
-        if (isFile && (sb.st_mode & S_IFMT) != S_IFREG) {
-            syslog(LOG_ERR | LOG_USER, "%s is not a regular file", path.c_str());
-            return false;
-        }
-
-        if (chmod(path.c_str(), mode) == -1) {
-            syslog(LOG_ERR | LOG_USER, "Chmod failed: %s", strerror(errno));
-            return false;
-        }
-
-        return true;
-    }
-
     if (isFile) {
-        int fd = creat(path.c_str(), mode);
+        int fd = open(path.c_str(), O_CREAT | O_WRONLY, mode);
         if (fd == -1) {
-            syslog(LOG_ERR | LOG_USER, "Creat failed: %s", strerror(errno));
-            return false;
+            if (errno != EISDIR) {
+                syslog(LOG_ERR | LOG_USER, "Creat failed: %s", strerror(errno));
+                return false;
+            }
+        } else {
+            close(fd);
         }
-        close(fd);
     } else {
         if (mkdir(path.c_str(), mode) == -1) {
-            syslog(LOG_ERR | LOG_USER, "Mkdir failed: %s", strerror(errno));
-            return false;
+            if (errno != EEXIST) {
+                syslog(LOG_ERR | LOG_USER, "Mkdir failed: %s", strerror(errno));
+                return false;
+            }
         }
     }
+
+    if (stat(path.c_str(), &sb) == -1) {
+        syslog(LOG_ERR | LOG_USER, "Stat failed: %s", strerror(errno));
+        return false;
+    }
+
+    if (!isFile && (sb.st_mode & S_IFMT) != S_IFDIR) {
+        syslog(LOG_ERR | LOG_USER, "%s is not a directory", path.c_str());
+        return false;
+    }
+    if (isFile && (sb.st_mode & S_IFMT) != S_IFREG) {
+        syslog(LOG_ERR | LOG_USER, "%s is not a regular file", path.c_str());
+        return false;
+    }
+
     if (chmod(path.c_str(), mode) == -1) {
         syslog(LOG_ERR | LOG_USER, "Chmod failed: %s", strerror(errno));
         return false;
@@ -270,6 +263,9 @@ int main(int argc, char ** argv)
             }
             return 0;
         }
+    } catch (InsaneException & e) {
+        std::cerr << InsaneDaemon::NAME << ": " << e.what() << std::endl;
+        return 1;
     } catch (std::exception & e) {
         std::cerr << InsaneDaemon::NAME << ": " << e.what() << std::endl;
         return 1;
@@ -371,6 +367,9 @@ int main(int argc, char ** argv)
         }
 
         return 0;
+    } catch (InsaneException & e) {
+        syslog(LOG_ERR | LOG_USER, "Exception: %s", e.what());
+        std::cerr << "\n" << InsaneDaemon::NAME << ": Exception: " << e.what() << std::endl;
     } catch (std::exception & e) {
         syslog(LOG_ERR | LOG_USER, "Exception: %s", e.what());
         std::cerr << "\n" << InsaneDaemon::NAME << ": Exception: " << e.what() << std::endl;

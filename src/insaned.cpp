@@ -80,6 +80,13 @@ bool createIfNeeded(const std::string & path, bool isFile)
         }
     }
 
+    if (chmod(path.c_str(), mode) == -1) {
+        if (errno != ENOENT) {
+            syslog(LOG_ERR | LOG_USER, "Chmod failed: %s", strerror(errno));
+            return false;
+        }
+    }
+
     if (stat(path.c_str(), &sb) == -1) {
         syslog(LOG_ERR | LOG_USER, "Stat failed: %s", strerror(errno));
         return false;
@@ -91,11 +98,6 @@ bool createIfNeeded(const std::string & path, bool isFile)
     }
     if (isFile && (sb.st_mode & S_IFMT) != S_IFREG) {
         syslog(LOG_ERR | LOG_USER, "%s is not a regular file", path.c_str());
-        return false;
-    }
-
-    if (chmod(path.c_str(), mode) == -1) {
-        syslog(LOG_ERR | LOG_USER, "Chmod failed: %s", strerror(errno));
         return false;
     }
 

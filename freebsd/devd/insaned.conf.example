@@ -1,0 +1,41 @@
+#
+# Example /usr/local/etc/devd/insaned.conf file
+#
+# Use this file to automatically start and stop insaned if your scanner turns off and insaned is
+# continuously prints error messages.
+#
+# Adjust the following bits and copy to /usr/local/etc/devd/insaned.conf:
+# * path to insaned executable
+# * scanner vendor
+# * scanner product (use lsusb or similar to get the values)
+# * (optionally) username, group and device file permissions to restrict access
+#
+
+notify 1 {
+    match "subsystem" "DEVICE";
+    match "type" "ATTACH";
+    match "cdev" "ugen[0-9]+.[0-9]+";
+
+    # TODO adjust vendor and product here
+    match "vendor" "0x04c5";
+    match "product" "0x11a2";
+
+    # TODO adjust username, group and permissions here
+    action "chown -L cups:saned /dev/$cdev && chmod -L 660 /dev/$cdev";
+    # TODO adjust path to insaned here
+    action "/usr/local/bin/insaned -e /usr/local/etc/insaned/";
+};
+
+
+notify 1 {
+    match "subsystem" "DEVICE";
+    match "type" "DETACH";
+
+    # TODO adjust vendor and product here
+    match "vendor" "0x04c5";
+    match "product" "0x11a2";
+
+    # TODO adjust path to insaned here
+    action "/usr/bin/killall -9 insaned";
+};
+

@@ -17,12 +17,13 @@ Currently, insaned was tested on:
 * Ubuntu 16.04.1 LTS with Canon LiDE 210
 * Raspberry Pi with HP Scanjet 2400c (thanks to [GaryA](https://github.com/GaryA))
 * Debian 8 running on a [CHIP](https://getchip.com/pages/chip) with Canon Lide 210 (thanks to [Coaxial](https://github.com/Coaxial))
+* FreeBSD 11.1 with Fujitsu ScanSnap S1500 (thanks to [displaced](https://github.com/displaced))
 
 
 Why
 ---
 
-I've tried scanbuttond (http://scanbuttond.sourceforge.net/) and scanbd (http://scanbd.sourceforge.net/).
+I've tried [scanbuttond](http://scanbuttond.sourceforge.net/) and [scanbd](http://scanbd.sourceforge.net/).
 
 * scanbuttond could not detect buttons on my scanner
 * scanbd is waaay too complicated, it requires to configure SANE for network scanning. I spend 2 evenings trying to make it work and failed.
@@ -77,8 +78,8 @@ All event handler scripts have to exist and have to have the executable flag set
 Dependencies
 ------------
 
-* SANE library version 1.0.23 or later (tested with: 1.0.24)
-* Recent GCC with support for C++11 standard (tested with: 4.8.2, 5.4.0)
+* SANE library version 1.0.23 or later (tested with: 1.0.23 - 1.0.27)
+* Recent GCC with support for C++11 standard (tested with: 4.8.2, 5.4.0, 6.4.0)
 
 
 Installation
@@ -98,6 +99,12 @@ See also
 
 for more details.
 
+*Tips and tricks*
+
+If you happen to have a system where SANE headers (sane/sane.h) and libraries (libsane.so) are installed in an unusual location and simple `make` fails to compile insaned, try to provide paths to headers and libraries as follows:
+
+    CXXFLAGS=-I/path/to/your/usr/include LDFLAGS=-L/path/to/your/usr/lib make
+
 *Gentoo Linux*
 
 1. Add
@@ -110,6 +117,12 @@ for more details.
 
 1. Download [insaned_0.0.2-0ubuntu1_amd64.deb](https://github.com/abusenius/insaned/releases/download/v0.0.2/insaned_0.0.2-0ubuntu1_amd64.deb)
 2. sudo dpkg -i insaned_0.0.2-0ubuntu1_amd64.deb
+
+*FreeBSD*
+
+1. Use `gmake` instead of `make` to compile insaned.
+2. If `gmake` also doesn't work, see *Tips and tricks* above
+3. In order to automatically start insaned when the scanner is connected or turned on and stop it when the scanner is disconnected/turned off use provided [devd/insaned.conf](https://raw.githubusercontent.com/abusenius/insaned/master/freebsd/devd/insaned.conf.example) example
 
 
 Side note
@@ -133,5 +146,5 @@ The following features are planned:
 * More useful handler scripts
 * Handler script stub for starting a GUI frontend
 * Run daemon as user daemon when logging into a KDE/Gnome/whatever
-* Test with hibernate/suspend
 * Test with more hardware
+

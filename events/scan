@@ -30,7 +30,7 @@ convert "$TMPFILE" -quality 85 "$OUTFILE" >> "$INSANED_LOGFILE" 2>&1
 
 rm -f "$TMPFILE" >/dev/null 2>&1
 
-if ! ps aux | egrep -q 'gwen[v]iew' ; then
+if ! ps aux | grep -Eq 'gwen[v]iew' ; then
     gwenview "$OUTFILE" &
 fi
 

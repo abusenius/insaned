@@ -75,7 +75,7 @@ rm -f "$TMPFILE" >/dev/null 2>&1
 
 # This example starts gwenview if it is not already started
 # 
-# if ! ps aux | /bin/egrep -wq 'gwen[v]iew' ; then
+# if ! ps aux | /bin/grep -wqE 'gwen[v]iew' ; then
 #     gwenview >/dev/null 2>&1 &
 # fi
 

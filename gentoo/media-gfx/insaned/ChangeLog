@@ -2,14 +2,20 @@
 # Copyright 2013-2016 Alex Busenius; Distributed under the GPL v2
 # $Header: $
 
+*insaned-0.0.3 (28 Oct 2017)
+
+  28 Oct 2017; Alex Busenius <abusenius@users.noreply.github.com> +insaned-0.0.3.ebuild,
+     -insaned-0.0.2.ebuild:
+  Updated event scripts, added multipage scanning example.
+
 *insaned-0.0.2 (18 Aug 2016)
 
-  18 Aug 2016; Alex Busenius <the_unknown@gmx.net> +insaned-0.0.2.ebuild,
+  18 Aug 2016; Alex Busenius <abusenius@users.noreply.github.com> +insaned-0.0.2.ebuild,
      -insaned-0.0.1.ebuild::
   Log file and PID directory are created by the daemon if needed.
 
 *insaned-0.0.1 (15 Dec 2013)
 
-  15 Dec 2013; Alex Busenius <the_unknown@gmx.net> insaned-0.0.1.ebuild:
-  Initial ebuild by Alex Busenius <the_unknown@gmx.net>.
+  15 Dec 2013; Alex Busenius <abusenius@users.noreply.github.com> insaned-0.0.1.ebuild:
+  Initial release.
 

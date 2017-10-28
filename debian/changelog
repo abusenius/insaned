@@ -1,5 +1,12 @@
+insaned (0.0.3-0ubuntu1) xenial; urgency=low
+
+  * Autostart systemd service after installation
+  * Updated event scripts, added multipage scanning example
+
+ -- Alex Busenius <abusenius@users.noreply.github.com>  Sat, 28 Oct 2017 23:18:50 +0200
+
 insaned (0.0.2-0ubuntu1) xenial; urgency=medium
 
   * Initial release
 
- -- Alex Busenius <the_unknown@gmx.net>  Thu, 18 Aug 2016 21:08:42 +0200
+ -- Alex Busenius <abusenius@users.noreply.github.com>  Thu, 18 Aug 2016 21:08:42 +0200

@@ -108,15 +108,15 @@ If you happen to have a system where SANE headers (sane/sane.h) and libraries (l
 *Gentoo Linux*
 
 1. Add
-   [media-gfx/insaned/insaned-0.0.2.ebuild](https://raw.githubusercontent.com/abusenius/insaned/master/gentoo/media-gfx/insaned/insaned-0.0.2.ebuild) to media-gfx/insaned in your local overlay.
+   [media-gfx/insaned/insaned-0.0.3.ebuild](https://raw.githubusercontent.com/abusenius/insaned/master/gentoo/media-gfx/insaned/insaned-0.0.3.ebuild) to media-gfx/insaned in your local overlay.
 2. cd $YOUR_OVERLAY/media-gfx/insaned
-3. ebuild insaned-0.0.2.ebuild manifest
+3. ebuild insaned-0.0.3.ebuild manifest
 4. emerge insaned
 
 *Ubuntu Linux (64 bit)*
 
-1. Download [insaned_0.0.2-0ubuntu1_amd64.deb](https://github.com/abusenius/insaned/releases/download/v0.0.2/insaned_0.0.2-0ubuntu1_amd64.deb)
-2. sudo dpkg -i insaned_0.0.2-0ubuntu1_amd64.deb
+1. Download [insaned_0.0.3-0ubuntu1_amd64.deb](https://github.com/abusenius/insaned/releases/download/v0.0.3/insaned_0.0.3-0ubuntu1_amd64.deb)
+2. sudo dpkg -i insaned_0.0.3-0ubuntu2_amd64.deb
 
 *FreeBSD*
 

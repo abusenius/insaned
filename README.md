@@ -116,7 +116,7 @@ If you happen to have a system where SANE headers (sane/sane.h) and libraries (l
 *Ubuntu Linux (64 bit)*
 
 1. Download [insaned_0.0.3-0ubuntu1_amd64.deb](https://github.com/abusenius/insaned/releases/download/v0.0.3/insaned_0.0.3-0ubuntu1_amd64.deb)
-2. sudo dpkg -i insaned_0.0.3-0ubuntu2_amd64.deb
+2. sudo dpkg -i insaned_0.0.3-0ubuntu1_amd64.deb
 
 *FreeBSD*
 
